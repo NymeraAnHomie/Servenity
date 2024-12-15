@@ -245,6 +245,20 @@ do
         end})
 	end
 	
+	--// Races
+	local Races = Tabs.Miscellaneous:AddSection("Race") do
+	    Tabs.Miscellaneous:AddDropdown("miscellaneous_race_dropdown", {Title = "Choose Race", Default = 1, Values = {"Human", "Ice Troll", "Vampire"} })
+		Tabs.Miscellaneous:AddButton({Title = "Get Race", Callback = function()
+			if Options["miscellaneous_race_dropdown"].Value == "Human" then
+				ReplicatedStorage.Remotes.Skill:FireServer("Reaper")
+			elseif Options["miscellaneous_race_dropdown"].Value == "Ice Troll" then
+				ReplicatedStorage.Remotes.Skill:FireServer("Ice")
+			elseif Options["miscellaneous_race_dropdown"].Value == "Vampire" then
+				ReplicatedStorage.Remotes.Skill:FireServer("Vampire")
+			end
+        end})
+	end
+	
     --// World
 	local World = Tabs.Miscellaneous:AddSection("World") do
 	    Tabs.Miscellaneous:AddToggle("miscellaneous_anti_afk", {Title = "Anti Afk", Default = false })
