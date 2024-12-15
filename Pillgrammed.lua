@@ -181,7 +181,7 @@ end
 do
     --// Catacomb
     local Teleport_Catacombs = Tabs.Teleport:AddSection("Catacombs") do
-        Tabs.Teleport:AddToggle("auto_broken_lever_piece", {Title = "Auto Broken Lever Piece", Description = "no work idk why", Default = false })
+        Tabs.Teleport:AddToggle("auto_broken_lever_piece", {Title = "Auto Broken Lever Piece", Default = false })
         Tabs.Teleport:AddDropdown("teleport_catacomb_lever_dropdown", {Title = "Choose Lever", Default = 1, Values = LeverListsDropdown })
         Tabs.Teleport:AddButton({Title = "Teleport to Lever", Callback = function()
             Character.HumanoidRootPart.CFrame = Location.CatacombLevers[tostring(Options["teleport_catacomb_lever_dropdown"].Value)]
@@ -194,6 +194,23 @@ do
 		Tabs.Teleport:AddButton({Title = "Teleport to Islands", Callback = function()
 		    Character.HumanoidRootPart.CFrame = Location.Islands[tostring(Options["teleport_islands_dropdown"].Value)]
 		end})
+		Tabs.Teleport:AddButton({Title = "Claim all Mirrors", Description = "This may not successfully claim all mirrors on the first attempt; you may need to try again.", Callback = function()
+			Window:Dialog({Title = "Claim All Mirrors", Content = "This process may take around 10 seconds to complete, depending on your internet connection. Do you want to continue?", Buttons = {
+				{Title = "Confirm", Callback = function()
+		            for _, v in pairs(Workspace.Mirrors:GetDescendants()) do
+					    if v:IsA("ProximityPrompt") and v.Parent:IsA("BasePart") then
+					        Character.HumanoidRootPart.CFrame = v.Parent.CFrame
+					        task.wait(0.5)
+					        fireproximityprompt(v, 1)
+					        task.wait(0.5)
+					    end
+					end
+		        end},
+		        {Title = "Cancel", Callback = function()
+		            print("[User]: Has Cancelled the dialog")
+		        end}}
+			})
+        end})
     end
     
     --// NPCs
@@ -229,7 +246,9 @@ do
 	local Character = Tabs.Miscellaneous:AddSection("Character") do
         Tabs.Miscellaneous:AddToggle("miscellaneous_inf_jump", {Title = "Infinite Jump", Default = false })
         Tabs.Miscellaneous:AddToggle("miscellaneous_infinite_oxygen", {Title = "Infinite Oxygen", Default = true })
-        Tabs.Miscellaneous:AddToggle("miscellaneous_walk_on_water", {Title = "Walk on water", Default = true })
+        Tabs.Miscellaneous:AddToggle("miscellaneous_walk_on_water", {Title = "Walk on water", Default = true, Callback = function(v)
+	        
+        end})
 	end
 end
 
