@@ -157,7 +157,7 @@ local Window = Fluent:CreateWindow({
 local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "rbxassetid://10734886202" }),
     Auto = Window:AddTab({ Title = "Auto", Icon = "rbxassetid://10734923549" }),
-    Inventory = Window:AddTab({ Title = "Inventory", Icon = "rbxassetid://10709769841" }),
+    PVP = Window:AddTab({ Title = "PVP", Icon = "rbxassetid://10734975692" }),
     Teleport = Window:AddTab({ Title = "Teleport", Icon = "rbxassetid://10734922971" }),
     Miscellaneous = Window:AddTab({ Title = "Miscellaneous", Icon = "rbxassetid://10747373176" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "rbxassetid://10734950309" })
@@ -174,6 +174,12 @@ do
         Tabs.Main:AddInput("main_auto_parry_delay", {Title = "Auto Parry Delay", Default = "0.0131515102323", Placeholder = "0", Callback = function(v)
 			getgenv().AutoParryDelay = tonumber(v)
         end})
+    end
+    
+    --// Auto
+    local Main_Auto_Attack = Tabs.Main:AddSection("Auto Attack") do
+        Tabs.Main:AddToggle("main_auto_slash_toggle", {Title = "Auto Slash", Default = false })
+        Tabs.Main:AddToggle("main_auto_heavy_slash_toggle", {Title = "Auto Heavy Slash", Default = false })
     end
 end
 
