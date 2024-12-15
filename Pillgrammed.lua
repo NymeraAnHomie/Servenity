@@ -112,7 +112,8 @@ local Location = {
 	Islands = {
 		["Frozen Cathedral"] = CFrame.new(5224.056152, -360.426178, 3413.142578, 0.021708, -0.000000, -0.999764, 0.000000, 1.000000, -0.000000, 0.999764, -0.000000, 0.021708),
 		["Dojo's Approach"] = CFrame.new(1717.514771, 183.499954, 218.672638, -0.069664, 0.000000, 0.997571, -0.000000, 1.000000, -0.000000, -0.997571, -0.000000, -0.069664),
-		["False Believer"] = CFrame.new(3729.072998, -440.174469, 6843.669434, -0.612672, -0.000000, -0.790337, 0.000000, 1.000000, -0.000000, 0.790337, -0.000000, -0.612672)
+		["False Believer"] = CFrame.new(3729.072998, -440.174469, 6843.669434, -0.612672, -0.000000, -0.790337, 0.000000, 1.000000, -0.000000, 0.790337, -0.000000, -0.612672),
+		["Hidden Bell"] = CFrame.new(4272.542480, -467.906494, 3901.058350, 0.995006, -0.000000, 0.099818, 0.000000, 1.000000, -0.000000, -0.099818, 0.000000, 0.995006)
     },
 	CatacombLevers = {
 		["Lever 1"] = CFrame.new(5205.883789, -279.500092, 481.946106, -0.761892, 0.000000, 0.647704, 0.000000, 1.000000, -0.000000, -0.647704, 0.000000, -0.761892),
@@ -195,7 +196,7 @@ do
     end
     
     --// Islands
-    local Teleport_NPCs = Tabs.Teleport:AddSection("NPCs") do
+    local Teleport_Islands = Tabs.Teleport:AddSection("Islands") do
         Tabs.Teleport:AddDropdown("teleport_islands_dropdown", {Title = "Choose Islands", Default = 1, Values = IslandListsDropdown })
 		Tabs.Teleport:AddButton({Title = "Teleport to Islands", Callback = function()
 		    Character.HumanoidRootPart.CFrame = Location.Islands[tostring(Options["teleport_islands_dropdown"].Value)]
