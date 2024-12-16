@@ -109,6 +109,22 @@ local function ServerHop()
         warn("[Error]: Failed to fetch server list")
     end
 end
+local function ForceEquipTool(toolName)
+    if Humanoid and Backpack then
+        local Tool = Backpack:FindFirstChild(toolName)
+        if Tool then
+            Humanoid:EquipTool(Tool)
+        end
+    end
+end
+local function UnEquipTool(toolName)
+    if Character and Backpack then
+        local Tool = Character:FindFirstChild(toolName)
+        if Tool then
+            Tool.Parent = Backpack
+        end
+    end
+end
 
 local AutoFarmObj = Instance.new("Part", Workspace)
 AutoFarmObj.Size = Vector3.new(2, 2, 2)
@@ -167,6 +183,7 @@ local Window = Fluent:CreateWindow({
 local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "rbxassetid://10734886202" }),
     Auto = Window:AddTab({ Title = "Auto", Icon = "rbxassetid://10734923549" }),
+    Render = Window:AddTab({ Title = "Render", Icon = "rbxassetid://10723346959" }),
     PVP = Window:AddTab({ Title = "PVP", Icon = "rbxassetid://10734975692" }),
     Teleport = Window:AddTab({ Title = "Teleport", Icon = "rbxassetid://10734922971" }),
     Miscellaneous = Window:AddTab({ Title = "Miscellaneous", Icon = "rbxassetid://10747373176" }),
@@ -181,14 +198,24 @@ do
     local Main_Auto_Parry = Tabs.Main:AddSection("Auto Parry") do
         Tabs.Main:AddToggle("main_auto_parry_toggle", {Title = "Auto Parry", Default = false })
         Tabs.Main:AddDropdown("main_auto_parry_method", {Title = "Perfect Block", Default = 1, Values = {"Retry", "Add"} })
+        Tabs.Main:AddToggle("main_auto_parry_ping_based", {Title = "Ping Based", Default = false })
         Tabs.Main:AddInput("main_auto_parry_delay", {Title = "Auto Parry Delay", Default = "0.0131515102323", Placeholder = "0", Callback = function(v)
 			getgenv().AutoParryDelay = tonumber(v)
         end})
     end
     
-    --// Auto Farm
-    local Main_Auto_Farm = Tabs.Main:AddSection("Auto Farm") do
-        Tabs.Main:AddButton({Title = "Select Tool", Description = "Sets the selected tool to the one currently held by the player.", Callback = function()
+    --// Auto Slash
+    local Main_Auto_Attack = Tabs.Main:AddSection("Auto Attack") do
+        Tabs.Main:AddToggle("main_auto_slash_toggle", {Title = "Auto Slash", Default = false })
+        Tabs.Main:AddToggle("main_auto_heavy_slash_toggle", {Title = "Auto Heavy Slash", Default = false })
+    end
+end
+
+--// Automatically
+do
+     --// Auto Farm
+    local Auto_Farm = Tabs.Auto:AddSection("Auto Farm") do
+        Tabs.Auto:AddButton({Title = "Select Tool", Description = "Sets the selected tool to the one currently held by the player.", Callback = function()
 		    local HeldTool = Character:FindFirstChildOfClass("Tool")
 		    if HeldTool then
 		        getgenv().AutoFarmToolName = HeldTool.Name
@@ -197,13 +224,17 @@ do
 		        Fluent:Notify({Title = "No Tool Found", Content = "No tool equipped. Please equip a tool first.", Duration = 3})
 		    end
 		end})
-        Tabs.Main:AddToggle("main_auto_farm_cove_skeleton", {Title = "Auto Farm Cove Skeleton", Description = "All cash earned will be sent to the bank NPC.", Default = false })
+		Tabs.Auto:AddParagraph({Title = "Info", Content = "All cash earned will be sent to the bank NPC."})
+        Tabs.Auto:AddToggle("auto_farm_cove_skeleton", {Title = "Auto Farm Cove Skeleton", Default = false })
     end
-    
-    --// Auto
-    local Main_Auto_Attack = Tabs.Main:AddSection("Auto Attack") do
-        Tabs.Main:AddToggle("main_auto_slash_toggle", {Title = "Auto Slash", Default = false })
-        Tabs.Main:AddToggle("main_auto_heavy_slash_toggle", {Title = "Auto Heavy Slash", Default = false })
+end
+
+--// Render
+do
+     --// Players
+    local Render_ESP_Players = Tabs.Render:AddSection("ESP") do
+        Tabs.Render:AddToggle("render_esp_players", {Title = "Players", Default = false })
+        Tabs.Render:AddToggle("render_esp_players_distance", {Title = "Distance", Default = false })
     end
 end
 
@@ -340,28 +371,27 @@ local LastParryTime = 0
 RunService.RenderStepped:Connect(function()
     if Options["main_auto_parry_toggle"].Value then
         local CurrentTime = tick()
-        if CurrentTime - LastParryTime >= (tonumber(AutoParryDelay) or 0.0131515102323) then
+        if CurrentTime - LastParryTime >= (tonumber(AutoParryDelay) or 0.013) then
             if Options["main_auto_parry_method"].Value == "Retry" then
-                if not LocalPlayer.Character:FindFirstChild("PerfectBlock") then
+                if not Character:FindFirstChild("PerfectBlock") then
                     ReplicatedStorage.Remotes.Block:FireServer(false)
                     ReplicatedStorage.Remotes.Block:FireServer(true)
                     ReplicatedStorage.Remotes.Block:FireServer(false)
                 end
-                if not LocalPlayer.Character:FindFirstChild("Parrying") then
+                if not Character:FindFirstChild("Parrying") then
                     local Parrying = Instance.new("BoolValue", Character)
                     Parrying.Name = "Parrying"
                     Parrying.Value = true
                 end
-                
             elseif Options["main_auto_parry_method"].Value == "Add" then
                 ReplicatedStorage.Remotes.Block:FireServer(false)
                 ReplicatedStorage.Remotes.Block:FireServer(true)
-                if not LocalPlayer.Character:FindFirstChild("PerfectBlock") then
+                if not Character:FindFirstChild("PerfectBlock") then
                     local PerfectBlock = Instance.new("BoolValue", Character)
                     PerfectBlock.Name = "PerfectBlock"
                     PerfectBlock.Value = true
                 end
-                if not LocalPlayer.Character:FindFirstChild("Parrying") then
+                if not Character:FindFirstChild("Parrying") then
                     local Parrying = Instance.new("BoolValue", Character)
                     Parrying.Name = "Parrying"
                     Parrying.Value = true
@@ -370,16 +400,10 @@ RunService.RenderStepped:Connect(function()
             LastParryTime = CurrentTime
         end
     end
-    
+
     if Options["modifications_walkspeed_enabled"].Value then
         local v1ws, v2ws = LocalPlayer.Character.HumanoidRootPart, LocalPlayer.Character.Humanoid
         v1ws.CFrame = v1ws.CFrame + v2ws.MoveDirection * WalkspeedCFrameAmount
-    end
-end)
-
-RunService.RenderStepped:Connect(function()
-    if Options["main_auto_farm_cove_skeleton"].Value then
-        
     end
 end)
 
@@ -432,10 +456,45 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
+RunService.RenderStepped:Connect(function()
+    if Options["auto_farm_cove_skeleton"].Value then
+        local Skeleton = Workspace.Mobs:FindFirstChild("The Skeleton")
+        local Tool = Character:FindFirstChildOfClass("Tool")
+        ReplicatedStorage.Remotes.Bank:InvokeServer(true, 1)        
+        if Skeleton and Skeleton:FindFirstChild("Head") then
+            local CoveSkeletonCFrame = Skeleton.Head.CFrame
+            UnEquipTool("Tainted Flower")
+            ForceEquipTool(AutoFarmToolName)
+            AutoFarmObj.CFrame = CoveSkeletonCFrame + Vector3.new(0, -5.5, 0)
+            Character.HumanoidRootPart.CFrame = AutoFarmObj.CFrame + Vector3.new(0, 3.5, 0)
+            if Tool then
+                Tool:Activate()
+            end
+        else
+            ForceEquipTool("Tainted Flower")
+            Character.HumanoidRootPart.CFrame = Workspace.Map.BlackenedIsland.Altar.Water.CFrame + Vector3.new(0, 5.5, 0)
+            if Tool then
+                Tool:Activate()
+            end
+        end
+    end
+end)
+
 LocalPlayer.CharacterAdded:Connect(function(Char)
     Character = Char
     Humanoid = Character:WaitForChild("Humanoid")
     HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+    
+	if Options["auto_farm_cove_skeleton"].Value then
+	    local Skeleton = Workspace.Mobs:FindFirstChild("The Skeleton")
+	    local Tool = Character:FindFirstChildOfClass("Tool")
+	    if not Skeleton then
+	        ForceEquipTool("Tainted Flower")
+	    end
+	    if Skeleton then
+		    ForceEquipTool(AutoFarmToolName)
+	    end
+	end
 end)
 
 if game:GetService("UserInputService").TouchEnabled then
