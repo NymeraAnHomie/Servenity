@@ -11,7 +11,9 @@ local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGUI = LocalPlayer.PlayerGui
+local Backpack = LocalPlayer.Backpack
 local Camera = workspace.CurrentCamera
+local ScreenCenter = Camera.ViewportSize / 2
 local Character = LocalPlayer.Character
 local Humanoid = Character:WaitForChild("Humanoid")
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
@@ -108,6 +110,10 @@ local function ServerHop()
     end
 end
 
+local AutoFarmObj = Instance.new("Part", Workspace)
+AutoFarmObj.Size = Vector3.new(2, 2, 2)
+AutoFarmObj.Anchored = true
+
 local Location = {
 	Islands = {
 		["Frozen Cathedral"] = CFrame.new(5224.056152, -360.426178, 3413.142578, 0.021708, -0.000000, -0.999764, 0.000000, 1.000000, -0.000000, 0.999764, -0.000000, 0.021708),
@@ -180,6 +186,20 @@ do
         end})
     end
     
+    --// Auto Farm
+    local Main_Auto_Farm = Tabs.Main:AddSection("Auto Farm") do
+        Tabs.Main:AddButton({Title = "Select Tool", Description = "Sets the selected tool to the one currently held by the player.", Callback = function()
+		    local HeldTool = Character:FindFirstChildOfClass("Tool")
+		    if HeldTool then
+		        getgenv().AutoFarmToolName = HeldTool.Name
+		        Fluent:Notify({Title = "Tool Selected", Content = "Selected tool: " .. HeldTool.Name, Duration = 3})
+		    else
+		        Fluent:Notify({Title = "No Tool Found", Content = "No tool equipped. Please equip a tool first.", Duration = 3})
+		    end
+		end})
+        Tabs.Main:AddToggle("main_auto_farm_cove_skeleton", {Title = "Auto Farm Cove Skeleton", Description = "All cash earned will be sent to the bank NPC.", Default = false })
+    end
+    
     --// Auto
     local Main_Auto_Attack = Tabs.Main:AddSection("Auto Attack") do
         Tabs.Main:AddToggle("main_auto_slash_toggle", {Title = "Auto Slash", Default = false })
@@ -238,15 +258,16 @@ end
 --// Miscellaneous
 do
     --// Modifications
-	local Modifications = Tabs.Miscellaneous:AddSection("Modifications") do
+	local Miscellaneous_Modifications = Tabs.Miscellaneous:AddSection("Modifications") do
 	    Tabs.Miscellaneous:AddToggle("modifications_walkspeed_enabled", {Title = "Walkspeed", Default = false })
     	Tabs.Miscellaneous:AddInput("modifications_walkspeed_speed_amount", {Title = "Walkspeed Amount", Default = "", Placeholder = "5", Callback = function(v)
 			getgenv().WalkspeedCFrameAmount = v
         end})
+        Tabs.Miscellaneous:AddToggle("modifications_inf_jump", {Title = "Infinite Jump", Default = false })
 	end
 	
 	--// Races
-	local Races = Tabs.Miscellaneous:AddSection("Race") do
+	local Miscellaneous_Races = Tabs.Miscellaneous:AddSection("Race") do
 	    Tabs.Miscellaneous:AddDropdown("miscellaneous_race_dropdown", {Title = "Choose Race", Default = 1, Values = {"Human", "Ice Troll", "Vampire"} })
 		Tabs.Miscellaneous:AddButton({Title = "Get Race", Callback = function()
 			if Options["miscellaneous_race_dropdown"].Value == "Human" then
@@ -259,20 +280,19 @@ do
         end})
 	end
 	
-    --// World
-	local World = Tabs.Miscellaneous:AddSection("World") do
-	    Tabs.Miscellaneous:AddToggle("miscellaneous_anti_afk", {Title = "Anti Afk", Default = false })
-    	Tabs.Miscellaneous:AddToggle("miscellaneous_remove_fog", {Title = "Anti Fog", Default = false })
-        Tabs.Miscellaneous:AddToggle("miscellaneous_remove_blur", {Title = "Full Brightness", Default = false })
+	--// Game Info
+	local Miscellaneous_World = Tabs.Miscellaneous:AddSection("Notify") do
+        Tabs.Miscellaneous:AddToggle("game_info_meteor_notify", {Title = "Meteor Notification", Description = "Displays a notification when a meteor spawns.", Default = true })
 	end
 	
-	--// Character
-	local Character = Tabs.Miscellaneous:AddSection("Character") do
-        Tabs.Miscellaneous:AddToggle("miscellaneous_inf_jump", {Title = "Infinite Jump", Default = false })
-        Tabs.Miscellaneous:AddToggle("miscellaneous_infinite_oxygen", {Title = "Infinite Oxygen", Default = true })
-        Tabs.Miscellaneous:AddToggle("miscellaneous_walk_on_water", {Title = "Walk on water", Default = true, Callback = function(v)
-	        
-        end})
+	--// World
+	local Miscellaneous_World = Tabs.Miscellaneous:AddSection("World") do
+	    Tabs.Miscellaneous:AddToggle("miscellaneous_anti_afk", {Title = "Anti Afk", Default = false })
+    	Tabs.Miscellaneous:AddToggle("miscellaneous_anti_fog", {Title = "Anti Fog", Default = false })
+        Tabs.Miscellaneous:AddToggle("miscellaneous_anti_rain", {Title = "Anti Rain", Default = false })
+        Tabs.Miscellaneous:AddToggle("miscellaneous_anti_wind", {Title = "Anti Wind", Default = false })
+        Tabs.Miscellaneous:AddToggle("miscellaneous_always_day", {Title = "Always Day", Default = false })
+        Tabs.Miscellaneous:AddToggle("miscellaneous_anti_blur", {Title = "Full Brightness", Default = false })
 	end
 end
 
@@ -316,25 +336,6 @@ do
 	SaveManager:LoadAutoloadConfig()
 end
 
-RunService.RenderStepped:Connect(function()
-    if Options["miscellaneous_remove_fog"].Value then
-        Lighting.FogEnd = 9e9
-        Lighting.FogColor = Color3.fromRGB(255, 255, 255)
-    else
-        Lighting.FogEnd = Original.FogEnd
-        Lighting.FogColor = Original.FogColor
-    end
-    if Options["miscellaneous_remove_blur"].Value then
-        Lighting.Brightness = 0.35
-        Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
-        Lighting.GlobalShadows = false
-    else
-        Lighting.Brightness = Original.Brightness
-        Lighting.OutdoorAmbient = Original.OutdoorAmbient
-        Lighting.GlobalShadows = true
-    end
-end)
-
 local LastParryTime = 0
 RunService.RenderStepped:Connect(function()
     if Options["main_auto_parry_toggle"].Value then
@@ -346,17 +347,22 @@ RunService.RenderStepped:Connect(function()
                     ReplicatedStorage.Remotes.Block:FireServer(true)
                     ReplicatedStorage.Remotes.Block:FireServer(false)
                 end
+                if not LocalPlayer.Character:FindFirstChild("Parrying") then
+                    local Parrying = Instance.new("BoolValue", Character)
+                    Parrying.Name = "Parrying"
+                    Parrying.Value = true
+                end
                 
             elseif Options["main_auto_parry_method"].Value == "Add" then
                 ReplicatedStorage.Remotes.Block:FireServer(false)
                 ReplicatedStorage.Remotes.Block:FireServer(true)
                 if not LocalPlayer.Character:FindFirstChild("PerfectBlock") then
-                    local PerfectBlock = Instance.new("BoolValue", LocalPlayer.Character)
+                    local PerfectBlock = Instance.new("BoolValue", Character)
                     PerfectBlock.Name = "PerfectBlock"
                     PerfectBlock.Value = true
                 end
                 if not LocalPlayer.Character:FindFirstChild("Parrying") then
-                    local Parrying = Instance.new("BoolValue", LocalPlayer.Character)
+                    local Parrying = Instance.new("BoolValue", Character)
                     Parrying.Name = "Parrying"
                     Parrying.Value = true
                 end
@@ -371,8 +377,57 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+RunService.RenderStepped:Connect(function()
+    if Options["main_auto_farm_cove_skeleton"].Value then
+        
+    end
+end)
+
+local MeteorNotified = false
+RunService.RenderStepped:Connect(function()
+    if Options["miscellaneous_anti_fog"].Value then
+        Lighting.FogEnd = 9e9
+        Lighting.FogColor = Color3.fromRGB(255, 255, 255)
+    else
+        Lighting.FogEnd = Original.FogEnd
+        Lighting.FogColor = Original.FogColor
+    end
+    if Options["miscellaneous_anti_blur"].Value then
+        Lighting.Brightness = 0.35
+        Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+        Lighting.GlobalShadows = false
+    else
+        Lighting.Brightness = Original.Brightness
+        Lighting.OutdoorAmbient = Original.OutdoorAmbient
+        Lighting.GlobalShadows = true
+    end
+    if ReplicatedStorage and ReplicatedStorage.GameInfo then
+	    if Options["miscellaneous_anti_rain"].Value then
+	        ReplicatedStorage.GameInfo.Raining = false
+	        ReplicatedStorage.GameInfo.HeavyRain = false
+	    end
+	    if Options["miscellaneous_anti_wind"].Value then
+	        ReplicatedStorage.GameInfo.Windy = false
+	        ReplicatedStorage.GameInfo.Windness = 0
+	    end
+	    if Options["miscellaneous_always_day"].Value then
+	        ReplicatedStorage.GameInfo.Time = 10
+	    end
+	    if Options["game_info_meteor_notify"].Value and ReplicatedStorage.GameInfo.Meteor.Value < 1 and not MeteorNotified then
+	        Fluent:Notify({
+	            Title = "Game Info",
+	            Content = "Meteor has spawned.",
+	            Duration = 3
+	        })
+	        MeteorNotified = true
+	    elseif ReplicatedStorage.GameInfo.Meteor.Value >= 1 then
+	        MeteorNotified = false
+	    end
+	end
+end)
+
 UserInputService.JumpRequest:Connect(function()
-    if Options["miscellaneous_inf_jump"].Value and Character and Character:FindFirstChild("Humanoid") then
+    if Options["modifications_inf_jump"].Value and Character and Character:FindFirstChild("Humanoid") then
         Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
