@@ -232,8 +232,8 @@ end
 --// Render
 do
      --// Players
-    local Render_ESP_Players = Tabs.Render:AddSection("ESP") do
-        Tabs.Render:AddToggle("render_esp_players", {Title = "Players", Default = false })
+    local Render_ESP = Tabs.Render:AddSection("Visuals") do
+        Tabs.Render:AddToggle("render_esp_players", {Title = "ESP Players", Default = false })
         Tabs.Render:AddToggle("render_esp_players_distance", {Title = "Distance", Default = false })
     end
 end
@@ -367,6 +367,7 @@ do
 	SaveManager:LoadAutoloadConfig()
 end
 
+--// Main
 local LastParryTime = 0
 RunService.RenderStepped:Connect(function()
     if Options["main_auto_parry_toggle"].Value then
@@ -407,6 +408,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+--// World Visuals
 local MeteorNotified = false
 RunService.RenderStepped:Connect(function()
     if Options["miscellaneous_anti_fog"].Value then
@@ -456,6 +458,7 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
+--// Auto Farm
 RunService.RenderStepped:Connect(function()
     if Options["auto_farm_cove_skeleton"].Value then
         local Skeleton = Workspace.Mobs:FindFirstChild("The Skeleton")
@@ -477,6 +480,70 @@ RunService.RenderStepped:Connect(function()
                 Tool:Activate()
             end
         end
+    end
+end)
+
+--// ESP
+local EspCache = {}
+RunService.RenderStepped:Connect(function()
+    if Options["render_esp_players"].Value then
+        for _, Player in ipairs(Players:GetPlayers()) do
+            if Player ~= Players.LocalPlayer and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChild("Head") then
+                if not EspCache[Player] then
+                    EspCache[Player] = {
+                        NameText = Drawing.new("Text"),
+                        HpText = Drawing.new("Text")
+                    }
+
+                    EspCache[Player].NameText.Size = 18
+                    EspCache[Player].NameText.Color = Color3.fromRGB(255, 255, 255)
+                    EspCache[Player].NameText.Center = true
+                    EspCache[Player].NameText.Outline = true
+                    EspCache[Player].NameText.OutlineColor = Color3.fromRGB(0, 0, 0)
+                    EspCache[Player].HpText.Size = 18
+                    EspCache[Player].HpText.Color = Color3.fromRGB(0, 255, 0)
+                    EspCache[Player].HpText.Center = true
+                    EspCache[Player].HpText.Outline = true
+                    EspCache[Player].HpText.OutlineColor = Color3.fromRGB(0, 0, 0)
+                end
+                local Esp = EspCache[Player]
+                local HeadPosition = Player.Character.Head.Position + Vector3.new(0, 2.5, 0)
+                local ScreenPos, OnScreen = Camera:WorldToViewportPoint(HeadPosition)
+                if OnScreen then
+                    Esp.NameText.Position = Vector2.new(ScreenPos.X, ScreenPos.Y)
+                    Esp.NameText.Visible = true
+                    Esp.NameText.Text = Player.Name
+                    local Health = Player.Character:FindFirstChild("Humanoid") and Player.Character.Humanoid.Health or 0
+                    Esp.HpText.Position = Vector2.new(ScreenPos.X, ScreenPos.Y + 20)
+                    Esp.HpText.Visible = true
+                    Esp.HpText.Text = "HP: " .. math.floor(Health)
+                    if Options["render_esp_players_distance"].Value then
+                        local Distance = (Player.Character.HumanoidRootPart.Position - Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                        Esp.NameText.Text = Player.Name .. " (" .. math.floor(Distance) .. " studs)"
+                    end
+                else
+                    Esp.NameText.Visible = false
+                    Esp.HpText.Visible = false
+                end
+            elseif EspCache[Player] then
+                EspCache[Player].NameText.Visible = false
+                EspCache[Player].HpText.Visible = false
+            end
+        end
+    else
+        for _, Esp in pairs(EspCache) do
+            Esp.NameText.Visible = false
+            Esp.HpText.Visible = false
+        end
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(Player)
+    if EspCache[Player] then
+        for _, Esp in pairs(EspCache[Player]) do
+            Esp:Remove()
+        end
+        EspCache[Player] = nil
     end
 end)
 
