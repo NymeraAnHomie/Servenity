@@ -1,2 +1,2 @@
 # Servenity
-The Offical Loader of Servenity
+The Official Loader for Servenity. All source code is developed by me.
