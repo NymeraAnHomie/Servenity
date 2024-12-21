@@ -132,9 +132,6 @@ local function AutoAppraise(Fish, Mutation)
         return
     end
 end
-local function FindItem(Player, Item)
-
-end
 local function FavoriteItem(ToolName)
     for _, Tool in pairs(LocalPlayer.Backpack:GetChildren()) do
         if string.find(Tool.Name, ToolName) then
@@ -167,7 +164,8 @@ local Location = {
         ["Terrapin"] = CFrame.new(-143.862732, 145.100067, 1909.52588, -0.879716396, 6.53489494e-08, -0.475498736, 4.80829385e-08, 1, 4.84745755e-08, 0.475498736, 1.97805026e-08, -0.879716396),
         ["Ancient Archive"] = CFrame.new(-3159.99512, -745.614014, 1684.16797, 1, -7.40275823e-08, 2.84239377e-06, 7.40277315e-08, 1, -5.38872342e-08, -2.84239377e-06, 5.38874474e-08, 1),
         ["Ancient Isle"] = CFrame.new(6056.0498, 195.280151, 278.566376, -0.850848079, -8.56003481e-08, -0.525411725, -5.92180562e-08, 1, -6.70232012e-08, 0.525411725, -2.59127031e-08, -0.850848079),
-        ["Ancient Archive Entrance"] = CFrame.new(5921.37988, 164.931091, 457.289581, 0.632040918, 4.07546175e-08, 0.774935007, 6.71610767e-10, 1, -5.3138784e-08, -0.774935007, 3.41063391e-08, 0.632040918)
+        ["Ancient Archive Entrance"] = CFrame.new(5921.37988, 164.931091, 457.289581, 0.632040918, 4.07546175e-08, 0.774935007, 6.71610767e-10, 1, -5.3138784e-08, -0.774935007, 3.41063391e-08, 0.632040918),
+        ["Northen Expedition"] = CFrame.new(19563.322266, 141.034576, 5286.112793, -0.899414, -0.000000, 0.437097, 0.000000, 1.000000, 0.000000, -0.437097, 0.000000, -0.899414)
     },
     Totem = {
         ["Aurora Totem"] = CFrame.new(-1813.348022, -136.927963, -3281.077637, -0.422536, -0.000000, 0.906346, -0.000000, 1.000000, 0.000000, -0.906346, 0.000000, -0.422536),
@@ -181,6 +179,18 @@ local Location = {
     NPC = {
 	    ["Test"] = CFrame.new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 	}
+}
+local Event_Zone = {
+    Main = {
+        "FischFright24",
+        "Megalodon",
+        "Whale Shark",
+        "Great White Shark",
+        "Great Hammerhead Shark",
+        "Fischgiving",
+        "Isonade",
+        "The Depths - Serpent"
+    }
 }
 
 local islandNames = {}
@@ -232,7 +242,7 @@ do
     --// Farming
     local Main_AutoFish_Config = Tabs.Main:AddSection("Config") do
 	    Tabs.Main:AddDropdown("auto_fish_config_reel_mode", {Title = "Reel Mode", Default = 1, Values = {"Instant", "Filled", "Legit", "Fail"} })
-        Tabs.Main:AddDropdown("auto_fish_config_shake_method", {Title = "Shake Method", Default = 1, Values = {"UINavigation", "VIM"} })
+        Tabs.Main:AddDropdown("auto_fish_config_shake_method", {Title = "Shake Method", Default = 1, Values = {"UINavigation", "Mousemoverel", "VIM"} })
         Tabs.Main:AddToggle("auto_fish_anti_perfect_catch", {Title = "Anti Perfect-Catch", Default = false })
         Tabs.Main:AddButton({Title = "Save Position", Callback = function()
             if Character and Character:FindFirstChild("HumanoidRootPart") then
@@ -321,7 +331,7 @@ do
     
     --// NPC
     local Teleport_Islands = Tabs.Teleport:AddSection("NPC") do
-	    Tabs.Teleport:AddDropdown("teleport_npc_dropdown", {Title = "Choose Island", Default = 1, Values = NPCNames, Callback = function(v)
+	    Tabs.Teleport:AddDropdown("teleport_npc_dropdown", {Title = "Choose NPCs", Default = 1, Values = NPCNames, Callback = function(v)
 		    Location.ChosenNPC = v
 		end})
 		Tabs.Teleport:AddButton({Title = "Teleport to NPC", Callback = function()
@@ -349,6 +359,16 @@ do
 		end})
     end
     
+    --// Event Zone
+    local Teleport_Event_Zone = Tabs.Teleport:AddSection("Event Zone") do
+	    Tabs.Teleport:AddDropdown("teleport_event_zone_dropdown", {Title = "Choose Event Zone", Default = 1, Values = Event_Zone.Main, Callback = function(v)
+		    
+		end})
+		Tabs.Teleport:AddButton({Title = "Teleport to Event Zone", Callback = function()
+		    
+		end})
+    end
+    
     --// Fishing Rod
     local Teleport_Fishing_Rod = Tabs.Teleport:AddSection("Fishing Rod") do
 	    Tabs.Teleport:AddButton({Title = "Rod of the Depths", Callback = function()
@@ -365,9 +385,10 @@ do
     --// Modifications
 	local Modifications = Tabs.Miscellaneous:AddSection("Modifications") do
 	    Tabs.Miscellaneous:AddToggle("modifications_walkspeed_enabled", {Title = "Walkspeed", Default = false })
-    	Tabs.Miscellaneous:AddInput("modifications_walkspeed_speed_amount", {Title = "Walkspeed Amount", Default = "", Placeholder = "55", Callback = function(v)
-			getgenv().WalkspeedCFrameAmount = v
+    	Tabs.Miscellaneous:AddInput("modifications_walkspeed_speed_amount", {Title = "Walkspeed Amount", Default = "5", Placeholder = "5", Callback = function(v)
+			getgenv().WalkspeedCFrameAmount = v or 5
         end})
+        Tabs.Miscellaneous:AddToggle("modifications_inf_jump", {Title = "Infinite Jump", Default = false })
 	end
 	
     --// World
@@ -379,9 +400,15 @@ do
 	
 	--// Character
 	local Character = Tabs.Miscellaneous:AddSection("Character") do
-        Tabs.Miscellaneous:AddToggle("miscellaneous_inf_jump", {Title = "Infinite Jump", Default = false })
-        Tabs.Miscellaneous:AddToggle("miscellaneous_infinite_oxygen", {Title = "Infinite Oxygen", Default = true })
-        Tabs.Miscellaneous:AddToggle("miscellaneous_walk_on_water", {Title = "Walk on water", Default = true })
+        Tabs.Miscellaneous:AddToggle("miscellaneous_infinite_oxygen", {Title = "Infinite Oxygen", Default = true})
+        Tabs.Miscellaneous:AddToggle("miscellaneous_infinite_temperature", {Title = "Infinite Temperature", Default = true})
+        Tabs.Miscellaneous:AddToggle("miscellaneous_walk_on_water", {Title = "Walk on water", Default = true, Callback = function(v)
+            for _, child in pairs(Workspace.zones.fishing:GetChildren()) do
+			    if child:IsA("BasePart") then
+			        child.CanCollide = v
+			    end
+			end
+        end})
 	    Tabs.Miscellaneous:AddToggle("miscellaneous_anchor_body", {Title = "Anchor Body", Default = false })
 	end
 	
@@ -457,6 +484,8 @@ RunService.RenderStepped:Connect(function()
 	                VirtualInputManager:SendMouseButtonEvent(CenterXShakeButton, CenterYShakeButton, 0, true, LocalPlayer, 0)
 	                VirtualInputManager:SendMouseButtonEvent(CenterXShakeButton, CenterYShakeButton, 0, false, LocalPlayer, 0)
 	
+				elseif Options["auto_fish_config_shake_method"].Value == "Mousemoverel" then
+	
 	            elseif Options["auto_fish_config_shake_method"].Value == "UINavigation" then
 	                GuiService.GuiNavigationEnabled = Options["auto_fish_shake"].Value
 	                GuiService.SelectedObject = ShakeButton
@@ -470,21 +499,21 @@ RunService.RenderStepped:Connect(function()
 	end
 	
 	--// Miscellaneous Code
-    if Options["miscellaneous_walk_on_water"].Value then
-        for _, child in pairs(Workspace.zones.fishing:GetChildren()) do
-		    if child:IsA("BasePart") then
-		        child.CanCollide = Options["miscellaneous_walk_on_water"].Value
-		    end
-		end
-    end
-    
     if Character then
-        local ClientOxygen = Character:FindFirstChild("client") and Character.client:FindFirstChild("oxygen")
+        local ClientOxygen = Character:FindFirstChild("client") and Character.client:FindFirstChild("oxygen") or Character.client:FindFirstChild("oxygen(peaks)")
+        local ClientTemperature = Character:FindFirstChild("client") and Character.client:FindFirstChild("temperature")
         if ClientOxygen then
             if Options["miscellaneous_infinite_oxygen"].Value then
                 ClientOxygen.Disabled = true
             else
                 ClientOxygen.Disabled = false
+            end
+        end
+        if ClientTemperature then
+            if Options["miscellaneous_infinite_temperature"].Value then
+                ClientTemperature.Disabled = true
+            else
+                ClientTemperature.Disabled = false
             end
         end
     end
@@ -509,6 +538,8 @@ RunService.RenderStepped:Connect(function()
 end)
 
 RunService.RenderStepped:Connect(function()
+    local CurrentTime = tick()
+    
     --// Auto Megalodon
     if Options["auto_fish_megalodon"].Value and Character then
         local MegalodonDefault = Workspace.zones.fishing:FindFirstChild("Megalodon Default")
@@ -551,16 +582,21 @@ RunService.RenderStepped:Connect(function()
 	
 	--// Auto Pop Sundial
 	if Options["auto_fish_event_fish_sundial"].Value then
-        Equip("Sundial Totem")
-        local Tool = Character:FindFirstChildOfClass("Tool")
-        if Tool and Tool.Name == "Sundial Totem" then
-            Tool:Activate()
-        end
-    end
+	    local SundialTotemCooldown = 5.5
+	    LastSundialPopTime = LastSundialPopTime or 0
+	    if CurrentTime - LastSundialPopTime >= SundialTotemCooldown then
+	        Equip("Sundial Totem")
+	        local Tool = Character:FindFirstChildOfClass("Tool")
+	        if Tool and Tool.Name == "Sundial Totem" then
+	            Tool:Activate()
+	            LastSundialPopTime = CurrentTime
+	        end
+	    end
+	end
 end)
 
 UserInputService.JumpRequest:Connect(function()
-    if Options["miscellaneous_inf_jump"].Value and Character and Character:FindFirstChild("Humanoid") then
+    if Options["modifications_inf_jump"].Value and Character and Character:FindFirstChild("Humanoid") then
         Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
@@ -578,11 +614,18 @@ PlayerGUI.ChildAdded:Connect(function(Child)
 	        end)
 	        
 	    elseif Options["auto_fish_config_reel_mode"].Value == "Filled" then
+	       local ReelGui = PlayerGui:FindFirstChild("reel")
        	task.spawn(function()
-	            while Child and Child.Parent and ReelEvent do
-	                task.wait(0.5)
-	                HumanoidRootPart.power.powerbar.bar.Size = UDim2.new(1, 0, 1, 0)
-	            end
+	           if ReelGui and ReelGui.Enabled then
+	                local ReelBar = ReelGui:FindFirstChild("bar")
+	                local ReelGuiBar = ReelBar and ReelBar:FindFirstChild("playerbar")
+		            while Child and Child.Parent do
+		                if ReelGuiBar and ReelGuiBar.Visible and ReelEvent then
+			                task.wait(0.5)
+			                ReelGuiBar.Size = UDim2.new(1, 0, 1, 0)
+						end
+		            end
+        		end
 	        end)
 			
 	    elseif Options["auto_fish_config_reel_mode"].Value == "Legit" then -- click each movement kinda like up then click up
@@ -641,5 +684,6 @@ ReplicatedStorage.events.finishedloading:FireServer()
 Workspace.active["Safe Whirlpool"]
 Workspace.active["Whale Shark"].Fish.Union
 Workspace.active["Great White Shark"].RootPart
-game:GetService("Workspace").zones.fishing["The Depths - Serpent"]
+Workspace.zones.fishing["The Depths - Serpent"]
+Workspace.zones.fishing.Isonade
 ]]
