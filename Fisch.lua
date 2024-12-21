@@ -279,9 +279,8 @@ do
     --// Auto Appraise
     local Auto_Appraise_Config = Tabs.Auto:AddSection("Auto Appraise") do
 	    Tabs.Auto:AddToggle("inventory_auto_favorite", {Title = "Auto Appraise", Default = false })
-	    Tabs.Auto:AddButton({Title = "Allow Weight", Callback = function()
-		    
-		end})
+    	Tabs.Auto:AddToggle("inventory_allow_weight", {Title = "Allow Weight", Default = false })
+    	Tabs.Auto:AddToggle("inventory_allow_mutation", {Title = "Allow Mutation", Default = false })
     end
 end
 
@@ -500,13 +499,16 @@ RunService.RenderStepped:Connect(function()
 	
 	--// Miscellaneous Code
     if Character then
-        local ClientOxygen = Character:FindFirstChild("client") and Character.client:FindFirstChild("oxygen") or Character.client:FindFirstChild("oxygen(peaks)")
+        local ClientOxygen = Character:FindFirstChild("client") and Character.client:FindFirstChild("oxygen")
+        local ClientMountainPeakOxygen = Character.client:FindFirstChild("oxygen(peaks)")
         local ClientTemperature = Character:FindFirstChild("client") and Character.client:FindFirstChild("temperature")
         if ClientOxygen then
             if Options["miscellaneous_infinite_oxygen"].Value then
                 ClientOxygen.Disabled = true
+                ClientMountainPeakOxygen.Disabled = true
             else
                 ClientOxygen.Disabled = false
+                ClientMountainPeakOxygen.Disabled = false
             end
         end
         if ClientTemperature then
@@ -527,7 +529,7 @@ RunService.RenderStepped:Connect(function()
     --// Short Code
 	if Options["modifications_walkspeed_enabled"].Value then
         local v1ws, v2ws = LocalPlayer.Character.HumanoidRootPart, LocalPlayer.Character.Humanoid
-        v1ws.CFrame = v1ws.CFrame + v2ws.MoveDirection * WalkspeedCFrameAmount
+        v1ws.CFrame = v1ws.CFrame + v2ws.MoveDirection * WalkspeedCFrameAmount or 5
     end
 	if Options["inventory_auto_favorite"].Value then
 		FavoriteItem(FishForceFavoriteName)
