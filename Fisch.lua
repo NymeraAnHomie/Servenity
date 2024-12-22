@@ -20,6 +20,10 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
+local AutoFarmObj = Instance.new("Part", Workspace)
+AutoFarmObj.Size = Vector3.new(5, 1, 5)
+AutoFarmObj.Anchored = true
+
 function SetDraggable(Instance, DragBuff)
     local Dragging, DragStart, StartPos
     local DragBuffer = DragBuff
@@ -174,7 +178,9 @@ local Location = {
         ["Tempest Totem"] = CFrame.new(37.580360, 132.499969, 1940.727173, -0.016323, -0.000000, -0.999867, 0.000000, 1.000000, -0.000000, 0.999867, -0.000000, -0.016323),
         ["Sundial Totem"] = CFrame.new(-1149.792725, 134.499954, -1073.856445, 0.996527, 0.000000, 0.083266, -0.000000, 1.000000, -0.000000, -0.083266, 0.000000, 0.996527),
         ["Eclipse Totem"] = CFrame.new(5966.475586, 274.108398, 842.755554, 0.968658, -0.000000, 0.248398, 0.000000, 1.000000, 0.000000, -0.248398, -0.000000, 0.968658),
-        ["Meteor Totem"] = CFrame.new(-1947.877197, 275.356659, 230.777985, -0.199754, 0.000000, -0.979846, 0.000000, 1.000000, 0.000000, 0.979846, 0.000000, -0.199754)
+        ["Meteor Totem"] = CFrame.new(-1947.877197, 275.356659, 230.777985, -0.199754, 0.000000, -0.979846, 0.000000, 1.000000, 0.000000, 0.979846, 0.000000, -0.199754),
+        ["Bilzzard Totem"] = nil,
+        ["Avalanche Totem"] = nil
     },
     NPC = {
 	    ["Test"] = CFrame.new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
@@ -209,7 +215,7 @@ end
 --// Window
 local Window = Fluent:CreateWindow({
     Title = "Servenity",
-    SubTitle = "V1 Private",
+    SubTitle = "V2 Private",
     TabWidth = 160,
     Size = UDim2.fromOffset(610, 385),
     Acrylic = true,
@@ -242,7 +248,7 @@ do
     --// Farming
     local Main_AutoFish_Config = Tabs.Main:AddSection("Config") do
 	    Tabs.Main:AddDropdown("auto_fish_config_reel_mode", {Title = "Reel Mode", Default = 1, Values = {"Instant", "Filled", "Legit", "Fail"} })
-        Tabs.Main:AddDropdown("auto_fish_config_shake_method", {Title = "Shake Method", Default = 1, Values = {"UINavigation", "Mousemoverel", "VIM"} })
+        Tabs.Main:AddDropdown("auto_fish_config_shake_method", {Title = "Shake Method", Default = 1, Values = {"UINavigation", "VIM"} })
         Tabs.Main:AddToggle("auto_fish_anti_perfect_catch", {Title = "Anti Perfect-Catch", Default = false })
         Tabs.Main:AddButton({Title = "Save Position", Callback = function()
             if Character and Character:FindFirstChild("HumanoidRootPart") then
@@ -370,6 +376,9 @@ do
     
     --// Fishing Rod
     local Teleport_Fishing_Rod = Tabs.Teleport:AddSection("Fishing Rod") do
+        Tabs.Teleport:AddButton({Title = "Heaven Rod", Callback = function()
+			Character.HumanoidRootPart.CFrame = CFrame.new(20027.599609, -467.665955, 7111.936523, -0.999731, 0.000000, -0.023211, 0.000000, 1.000000, 0.000000, 0.023211, 0.000000, -0.999731)
+	    end})
 	    Tabs.Teleport:AddButton({Title = "Rod of the Depths", Callback = function()
 			Character.HumanoidRootPart.CFrame = CFrame.new(1704.745239, -902.527039, 1445.513062, 0.997756, 0.000000, 0.066960, -0.000000, 1.000000, 0.000000, -0.066960, -0.000000, 0.997756)
 	    end})
@@ -385,7 +394,7 @@ do
 	local Modifications = Tabs.Miscellaneous:AddSection("Modifications") do
 	    Tabs.Miscellaneous:AddToggle("modifications_walkspeed_enabled", {Title = "Walkspeed", Default = false })
     	Tabs.Miscellaneous:AddInput("modifications_walkspeed_speed_amount", {Title = "Walkspeed Amount", Default = "5", Placeholder = "5", Callback = function(v)
-			getgenv().WalkspeedCFrameAmount = v or 5
+			getgenv().WalkspeedCFrameAmount = v
         end})
         Tabs.Miscellaneous:AddToggle("modifications_inf_jump", {Title = "Infinite Jump", Default = false })
 	end
@@ -483,8 +492,6 @@ RunService.RenderStepped:Connect(function()
 	                VirtualInputManager:SendMouseButtonEvent(CenterXShakeButton, CenterYShakeButton, 0, true, LocalPlayer, 0)
 	                VirtualInputManager:SendMouseButtonEvent(CenterXShakeButton, CenterYShakeButton, 0, false, LocalPlayer, 0)
 	
-				elseif Options["auto_fish_config_shake_method"].Value == "Mousemoverel" then
-	
 	            elseif Options["auto_fish_config_shake_method"].Value == "UINavigation" then
 	                GuiService.GuiNavigationEnabled = Options["auto_fish_shake"].Value
 	                GuiService.SelectedObject = ShakeButton
@@ -541,16 +548,20 @@ end)
 
 RunService.RenderStepped:Connect(function()
     local CurrentTime = tick()
+    local AutoEventZoneYValue = 6
+    local AutoFarmObjYValue = 4
     
     --// Auto Megalodon
     if Options["auto_fish_megalodon"].Value and Character then
         local MegalodonDefault = Workspace.zones.fishing:FindFirstChild("Megalodon Default")
         local MegalodonAncient = Workspace.zones.fishing:FindFirstChild("Megalodon Ancient")
         if MegalodonDefault then
-            Character.HumanoidRootPart.CFrame = MegalodonDefault.CFrame
+            Character.HumanoidRootPart.CFrame = MegalodonDefault.CFrame + Vector3.new(0, AutoEventZoneYValue, 0)
+            AutoFarmObj.CFrame = MegalodonDefault.CFrame + Vector3.new(0, -AutoFarmObjYValue, 0)
             return
         elseif MegalodonAncient then
-            Character.HumanoidRootPart.CFrame = MegalodonAncient.CFrame
+            Character.HumanoidRootPart.CFrame = MegalodonAncient.CFrame + Vector3.new(0, AutoEventZoneYValue, 0)
+            AutoFarmObj.CFrame = MegalodonAncient.CFrame + Vector3.new(0, -AutoFarmObjValue, 0)
             return
         end
     end
@@ -559,16 +570,18 @@ RunService.RenderStepped:Connect(function()
     if Options["auto_fish_whale_shark"].Value and Character then
         local WhaleShark = Workspace.zones.fishing:FindFirstChild("Whale Shark")
         if WhaleShark then
-            Character.HumanoidRootPart.CFrame = WhaleShark.CFrame
+            Character.HumanoidRootPart.CFrame = WhaleShark.CFrame + Vector3.new(0, AutoEventZoneYValue, 0)
+            AutoFarmObj.CFrame = WhaleShark.CFrame + Vector3.new(0, -AutoFarmObjValue, 0)
             return
         end
     end
     
     --// Auto Isonade
     if Options["auto_fish_isonade"].Value and Character then
-        local Isonade = Workspace.zones.fishing:FindFirstChild("Safe Whirlpool")
+        local Isonade = Workspace.zones.fishing:FindFirstChild("Isonade")
         if Isonade then
-            Character.HumanoidRootPart.CFrame = Isonade.CFrame
+            Character.HumanoidRootPart.CFrame = Isonade.CFrame + Vector3.new(0, AutoEventZoneYValue, 0)
+            AutoFarmObj.CFrame = Isonade.CFrame + Vector3.new(0, -AutoFarmObjValue, 0)
             return
         end
     end
@@ -577,7 +590,8 @@ RunService.RenderStepped:Connect(function()
     if Options["auto_fish_great_white_shark"].Value then
 		local GreatWhiteShark = Workspace.active:FindFirstChild("Great White Shark")
 		if GreatWhiteShark then
-			Character.HumanoidRootPart.CFrame = GreatWhiteShark.RootPart.CFrame
+			Character.HumanoidRootPart.CFrame = GreatWhiteShark.RootPart.CFrame + Vector3.new(0, AutoEventZoneYValue, 0)
+			AutoFarmObj.CFrame = GreatWhiteShark.CFrame + Vector3.new(0, -AutoFarmObjValue, 0)
 			return
 		end
 	end
@@ -606,42 +620,45 @@ end)
 PlayerGUI.ChildAdded:Connect(function(Child)
     if not (Child:IsA("ScreenGui") and Child.Name == "reel") then return end
     local ReelEvent = ReplicatedStorage:WaitForChild("events"):WaitForChild("reelfinished")
-    if Options["auto_fish_reel"].Value then
-	    if Options["auto_fish_config_reel_mode"].Value == "Instant" then
-	        task.spawn(function()
-	            while Child and Child.Parent and ReelEvent do
-	                task.wait(0.5)
-	                ReelEvent:FireServer(100, false)
-	            end
-	        end)
-	        
-	    elseif Options["auto_fish_config_reel_mode"].Value == "Filled" then
-	       local ReelGui = PlayerGui:FindFirstChild("reel")
-       	task.spawn(function()
-	           if ReelGui and ReelGui.Enabled then
-	                local ReelBar = ReelGui:FindFirstChild("bar")
-	                local ReelGuiBar = ReelBar and ReelBar:FindFirstChild("playerbar")
-		            while Child and Child.Parent do
-		                if ReelGuiBar and ReelGuiBar.Visible and ReelEvent then
-			                task.wait(0.5)
-			                ReelGuiBar.Size = UDim2.new(1, 0, 1, 0)
-						end
-		            end
-        		end
-	        end)
-			
-	    elseif Options["auto_fish_config_reel_mode"].Value == "Legit" then -- click each movement kinda like up then click up
-	    
-	    elseif Options["auto_fish_config_reel_mode"].Value == "Fail" then
-		    task.spawn(function()
-	            while Child and Child.Parent and ReelEvent do
-	                task.wait(0.5)
-	                ReelEvent:FireServer(5, true)
-	            end
-	        end)
-	        
-	    end
-	end
+    local ReelGui = PlayerGui:FindFirstChild("reel")
+    if ReelGui and ReelEvent then
+        local ReelBar = ReelGui:FindFirstChild("bar")
+        local ReelGuiBar = ReelBar and ReelBar:FindFirstChild("playerbar")
+        if ReelGuiBar and Options["auto_fish_reel"].Value then
+            if Options["auto_fish_config_reel_mode"].Value == "Instant" then
+                task.spawn(function()
+                    while Child and Child.Parent do
+                        task.wait(0.5)
+                        ReelEvent:FireServer(100, false)
+                    end
+                end)
+            elseif Options["auto_fish_config_reel_mode"].Value == "Filled" then
+                task.spawn(function()
+                    if ReelGui and ReelGui.Enabled then
+                        while Child and Child.Parent do
+                            if ReelGuiBar and ReelGuiBar.Visible then
+                                task.wait(0.5)
+                                ReelGuiBar.Size = UDim2.new(1, 0, 1, 0)
+                            end
+                        end
+                    end
+                end)
+            elseif Options["auto_fish_config_reel_mode"].Value == "Legit" then
+	            task.spawn(function()
+                    if ReelGui and ReelGui.Enabled then
+                        
+                    end
+                end)
+            elseif Options["auto_fish_config_reel_mode"].Value == "Fail" then
+                task.spawn(function()
+                    while Child and Child.Parent do
+                        task.wait(0.5)
+                        ReelEvent:FireServer(5, true)
+                    end
+                end)
+            end
+        end
+    end
 end)
 
 if game:GetService("UserInputService").TouchEnabled then
@@ -684,7 +701,7 @@ ReplicatedStorage.events.finishedloading:FireServer()
 
 -- workspace
 Workspace.active["Safe Whirlpool"]
-Workspace.active["Whale Shark"].Fish.Union
+Workspace.active["Whale Shark"]
 Workspace.active["Great White Shark"].RootPart
 Workspace.zones.fishing["The Depths - Serpent"]
 Workspace.zones.fishing.Isonade
