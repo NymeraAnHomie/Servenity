@@ -626,7 +626,7 @@ PlayerGUI.ChildAdded:Connect(function(Child)
                 task.wait()
                 local Mode = Options["auto_fish_config_reel_mode"].Value
                 if Mode == "Instant" then
-                    ReelEvent:FireServer(math.random(97, 100), 1)
+                    ReelEvent:FireServer(100, 1)
                 elseif Mode == "Filled" then
                     local ReelBar = Child:FindFirstChild("bar")
                     local ReelPlayerBar = ReelBar and ReelBar:FindFirstChild("playerbar")
