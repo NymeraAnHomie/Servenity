@@ -620,44 +620,30 @@ end)
 PlayerGUI.ChildAdded:Connect(function(Child)
     if not (Child:IsA("ScreenGui") and Child.Name == "reel") then return end
     local ReelEvent = ReplicatedStorage:WaitForChild("events"):WaitForChild("reelfinished")
-    local ReelGui = PlayerGui:FindFirstChild("reel")
-    if ReelGui and ReelEvent then
-        local ReelBar = ReelGui:FindFirstChild("bar")
-        local ReelGuiBar = ReelBar and ReelBar:FindFirstChild("playerbar")
-        if ReelGuiBar and Options["auto_fish_reel"].Value then
-            if Options["auto_fish_config_reel_mode"].Value == "Instant" then
-                task.spawn(function()
-                    while Child and Child.Parent do
-                        task.wait(0.5)
-                        ReelEvent:FireServer(100, false)
+    if Options["auto_fish_reel"].Value then
+        task.spawn(function()
+            while Child and Child.Parent and ReelEvent do
+                task.wait()
+                local Mode = Options["auto_fish_config_reel_mode"].Value
+                if Mode == "Instant" then
+                    ReelEvent:FireServer(math.random(97, 100), 1)
+                elseif Mode == "Filled" then
+                    local ReelBar = Child:FindFirstChild("bar")
+                    local ReelPlayerBar = ReelBar and ReelBar:FindFirstChild("playerbar")
+                    if ReelPlayerBar then
+                        ReelPlayerBar.Size = UDim2.new(1, 0, 1, 0)
                     end
-                end)
-            elseif Options["auto_fish_config_reel_mode"].Value == "Filled" then
-                task.spawn(function()
-                    if ReelGui and ReelGui.Enabled then
-                        while Child and Child.Parent do
-                            if ReelGuiBar and ReelGuiBar.Visible then
-                                task.wait(0.5)
-                                ReelGuiBar.Size = UDim2.new(1, 0, 1, 0)
-                            end
-                        end
+                elseif Mode == "Legit" then
+                    local PlayerBar = Child:FindFirstChild("bar") and Child.bar:FindFirstChild("playerbar")
+                    local FishBar = Child:FindFirstChild("bar") and Child.bar:FindFirstChild("fish")
+                    if PlayerBar and FishBar then
+                        PlayerBar.Position = FishBar.Position
                     end
-                end)
-            elseif Options["auto_fish_config_reel_mode"].Value == "Legit" then
-	            task.spawn(function()
-                    if ReelGui and ReelGui.Enabled then
-                        
-                    end
-                end)
-            elseif Options["auto_fish_config_reel_mode"].Value == "Fail" then
-                task.spawn(function()
-                    while Child and Child.Parent do
-                        task.wait(0.5)
-                        ReelEvent:FireServer(5, true)
-                    end
-                end)
+                elseif Mode == "Fail" then
+                    ReelEvent:FireServer(5, 1)
+                end
             end
-        end
+        end)
     end
 end)
 
