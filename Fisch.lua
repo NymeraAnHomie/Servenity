@@ -307,18 +307,26 @@ end
 
 --// Shop
 do
-    --// Auto Buy
-    local Shop_Auto_Buy = Tabs.Shop:AddSection("Auto Buy") do
-        Tabs.Shop:AddToggle("auto_buy", {Title = "Start", Default = false })
-        Tabs.Shop:AddDropdown("auto_buy_item_dropdown", {Title = "Choose items", Default = 1, Values = AutoBuyItems, Callback = function(v)
-		    AutoBuy.ChosenAutoBuy = v
-		end})
+   --// Auto Buy Main Settings
+   local Shop_Auto_Buy_Settings = Tabs.Shop:AddSection("Auto Buy Settings") do
 		Tabs.Shop:AddInput("auto_buy_item_delay", {Title = "Auto Buy Delay", Default = "1", Placeholder = "1", Callback = function(v)
 	        getgenv().ChosenAutoBuyDelay = tonumber(v or 0.5)
         end})
 		Tabs.Shop:AddInput("auto_buy_item_amount", {Title = "Amount to Buy", Default = "10", Placeholder = "10", Callback = function(v)
 	        getgenv().ChosenAutoBuyAmount = tonumber(v or 10)
         end})
+    end
+    
+    --// Auto Buy
+    local Shop_Auto_Buy = Tabs.Shop:AddSection("Auto Buy") do
+        Tabs.Shop:AddToggle("auto_buy", {Title = "Auto Buy", Default = false })
+        Tabs.Shop:AddDropdown("auto_buy_item_dropdown", {Title = "Choose items", Default = 1, Values = AutoBuyItems, Callback = function(v)
+		    AutoBuy.ChosenAutoBuy = v
+		end})
+    end
+    local Shop_Merlin = Tabs.Shop:AddSection("Merlin") do
+	    Tabs.Shop:AddToggle("merlin_auto_buy_relic", {Title = "Auto Buy Relic", Description = "Relic Price: 11,000C$", Default = false })
+	    Tabs.Shop:AddToggle("merlin_auto_buy_luck", {Title = "Auto Buy Luck", Description = "Luck Price: 5,000C$", Default = false })
     end
 end
 
@@ -557,8 +565,8 @@ end)
 
 RunService.RenderStepped:Connect(function()
     local CurrentTime = tick()
-    local AutoEventZoneYValue = 3
-    local AutoFarmObjYValue = 2
+    local AutoEventZoneYValue = 4.5
+    local AutoFarmObjYValue = 3
     
     --// Auto Megalodon
     if Options["auto_fish_megalodon"].Value and Character then
