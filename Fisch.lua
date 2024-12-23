@@ -139,16 +139,16 @@ end
 local function FavoriteItem(ToolName)
     for _, Tool in pairs(LocalPlayer.Backpack:GetChildren()) do
         if string.find(Tool.Name, ToolName) then
-            PlayerGui.hud.safezone.backpack.events.favourite:FireServer(LocalPlayer.Backpack[Tool])
+            PlayerGui.hud.safezone.backpack.events.favourite:FireServer(LocalPlayer.Backpack[Tool].Name)
             return
         end
     end
 end
 
 local Location = {
-    ChosenIsland = nil,
-    ChosenTotem = nil,
-    ChosenNPC = nil,
+    ChosenIsland = "The Depths",
+    ChosenTotem = "Aurora Totem",
+    ChosenNPC = "Test",
     Islands = {
         ["Snowcap"] = CFrame.new(2671.10425, 151.982208, 2388.95044, -0.459605783, 1.04652365e-09, -0.888123035, 2.21191843e-09, 1, 3.36813424e-11, 0.888123035, -1.94897543e-09, -0.459605783),
         ["Forsaken"] = CFrame.new(-2498.24683, 136.949753, 1624.8551, 0.999999821, -2.66347158e-08, -0.000577610394, 2.66658251e-08, 1, 5.38535616e-08, 0.000577610394, -5.38689555e-08, 0.999999821),
@@ -179,29 +179,26 @@ local Location = {
         ["Sundial Totem"] = CFrame.new(-1149.792725, 134.499954, -1073.856445, 0.996527, 0.000000, 0.083266, -0.000000, 1.000000, -0.000000, -0.083266, 0.000000, 0.996527),
         ["Eclipse Totem"] = CFrame.new(5966.475586, 274.108398, 842.755554, 0.968658, -0.000000, 0.248398, 0.000000, 1.000000, 0.000000, -0.248398, -0.000000, 0.968658),
         ["Meteor Totem"] = CFrame.new(-1947.877197, 275.356659, 230.777985, -0.199754, 0.000000, -0.979846, 0.000000, 1.000000, 0.000000, 0.979846, 0.000000, -0.199754),
-        ["Bilzzard Totem"] = nil,
-        ["Avalanche Totem"] = nil
+        ["Bilzzard Totem"] = CFrame.new(20148.884766, 742.952759, 5804.236328, 0.998622, 0.000000, -0.052486, 0.000000, 1.000000, 0.000000, 0.052486, 0.000000, 0.998622),
+        ["Avalanche Totem"] = CFrame.new(19710.455078, 467.630585, 6061.452637, 0.314567, -0.000000, 0.949235, 0.000000, 1.000000, 0.000000, -0.949235, -0.000000, 0.314567)
     },
     NPC = {
 	    ["Test"] = CFrame.new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 	}
 }
-local Event_Zone = {
-    Main = {
-        "FischFright24",
-        "Megalodon",
-        "Whale Shark",
-        "Great White Shark",
-        "Great Hammerhead Shark",
-        "Fischgiving",
-        "Isonade",
-        "The Depths - Serpent"
-    }
+local AutoBuy = {
+	ChosenAutoBuy = "Crab Cage",
+	Items = {
+		["Crab Cage"] = CFrame.new(-921.549194, 131.078812, -1106.665894, -0.967867, 0.000000, 0.251462, 0.000000, 1.000000, 0.000000, -0.251462, 0.000000, -0.967867),
+		["Bait Crate"] = CFrame.new(385.700500, 136.994141, 335.602051, -0.848685, -0.000000, -0.528898, -0.000000, 1.000000, -0.000000, 0.528898, -0.000000, -0.848685),
+		["Quality Bait Crate"] = CFrame.new(-175.573959, 143.273819, 1933.769897, -0.862027, -0.000000, 0.506862, -0.000000, 1.000000, -0.000000, -0.506862, -0.000000, -0.862027)
+	}
 }
 
 local islandNames = {}
 local NPCNames = {}
 local TotemNames = {}
+local AutoBuyItems = {}
 for islandName in pairs(Location.Islands) do
     table.insert(islandNames, islandName)
 end
@@ -210,6 +207,9 @@ for NPCName in pairs(Location.NPC) do
 end
 for TotemName in pairs(Location.Totem) do
 	table.insert(TotemNames, TotemName)
+end
+for AutoBuyItem in pairs(AutoBuy.Items) do
+	table.insert(AutoBuyItems, AutoBuyItem)
 end
 
 --// Window
@@ -227,8 +227,9 @@ local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "rbxassetid://10734886202" }),
     Dupe = Window:AddTab({ Title = "Dupe", Icon = "rbxassetid://10709798574" }),
     Auto = Window:AddTab({ Title = "Auto", Icon = "rbxassetid://10734923549" }),
-    Inventory = Window:AddTab({ Title = "Inventory", Icon = "rbxassetid://10709769841" }),
     Webhook = Window:AddTab({ Title = "Webhook", Icon = "rbxassetid://10734950813" }),
+    Inventory = Window:AddTab({ Title = "Inventory", Icon = "rbxassetid://10709769841" }),
+    Shop = Window:AddTab({ Title = "Shop", Icon = "rbxassetid://10734952479" }),
     Teleport = Window:AddTab({ Title = "Teleport", Icon = "rbxassetid://10734922971" }),
     Miscellaneous = Window:AddTab({ Title = "Miscellaneous", Icon = "rbxassetid://10747373176" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "rbxassetid://10734950309" })
@@ -295,12 +296,29 @@ do
     --// Auto Favorite
     local Inventory_Auto_Favorite = Tabs.Inventory:AddSection("Favorite") do
         Tabs.Inventory:AddInput("inventory_favorite_item", {Title = "Item", Default = "", Placeholder = "Fish", Callback = function(v)
-	        getgenv().FishForceFavoriteName = v
+	        getgenv().FishForceFavoriteName = tostring(v)
         end})
         Tabs.Inventory:AddToggle("inventory_auto_favorite", {Title = "Auto Favorite", Default = false })
 	    Tabs.Inventory:AddButton({Title = "Favorite", Callback = function()
 		    FavoriteItem(tostring(FishForceFavoriteName))
 		end})
+    end
+end
+
+--// Shop
+do
+    --// Auto Buy
+    local Shop_Auto_Buy = Tabs.Shop:AddSection("Auto Buy") do
+        Tabs.Shop:AddToggle("auto_buy", {Title = "Start", Default = false })
+        Tabs.Shop:AddDropdown("auto_buy_item_dropdown", {Title = "Choose items", Default = 1, Values = AutoBuyItems, Callback = function(v)
+		    AutoBuy.ChosenAutoBuy = v
+		end})
+		Tabs.Shop:AddInput("auto_buy_item_delay", {Title = "Auto Buy Delay", Default = "1", Placeholder = "1", Callback = function(v)
+	        getgenv().ChosenAutoBuyDelay = tonumber(v or 0.5)
+        end})
+		Tabs.Shop:AddInput("auto_buy_item_amount", {Title = "Amount to Buy", Default = "10", Placeholder = "10", Callback = function(v)
+	        getgenv().ChosenAutoBuyAmount = tonumber(v or 10)
+        end})
     end
 end
 
@@ -364,16 +382,6 @@ do
 		end})
     end
     
-    --// Event Zone
-    local Teleport_Event_Zone = Tabs.Teleport:AddSection("Event Zone") do
-	    Tabs.Teleport:AddDropdown("teleport_event_zone_dropdown", {Title = "Choose Event Zone", Default = 1, Values = Event_Zone.Main, Callback = function(v)
-		    
-		end})
-		Tabs.Teleport:AddButton({Title = "Teleport to Event Zone", Callback = function()
-		    
-		end})
-    end
-    
     --// Fishing Rod
     local Teleport_Fishing_Rod = Tabs.Teleport:AddSection("Fishing Rod") do
         Tabs.Teleport:AddButton({Title = "Heaven Rod", Callback = function()
@@ -394,7 +402,7 @@ do
 	local Modifications = Tabs.Miscellaneous:AddSection("Modifications") do
 	    Tabs.Miscellaneous:AddToggle("modifications_walkspeed_enabled", {Title = "Walkspeed", Default = false })
     	Tabs.Miscellaneous:AddInput("modifications_walkspeed_speed_amount", {Title = "Walkspeed Amount", Default = "5", Placeholder = "5", Callback = function(v)
-			getgenv().WalkspeedCFrameAmount = v
+			getgenv().WalkspeedCFrameAmount = tostring(v or 5)
         end})
         Tabs.Miscellaneous:AddToggle("modifications_inf_jump", {Title = "Infinite Jump", Default = false })
 	end
@@ -424,6 +432,9 @@ do
 	local Notifications = Tabs.Miscellaneous:AddSection("Notifications") do
 	    Tabs.Miscellaneous:AddToggle("miscellaneous_notify_zone_event", {Title = "Notify Zone Event", Default = false })
     	Tabs.Miscellaneous:AddToggle("miscellaneous_player_joinorleft_log", {Title = "Player Left/Join", Default = false })
+	end
+	local HideIdentity = Tabs.Miscellaneous:AddSection("Hide Identity") do
+    	Tabs.Miscellaneous:AddToggle("hide_identity", {Title = "Hide Idenitity", Default = false })
 	end
 end
 
@@ -491,9 +502,7 @@ RunService.RenderStepped:Connect(function()
 	                local CenterYShakeButton = ShakeButton.AbsolutePosition.Y + (ShakeButton.AbsoluteSize.Y / 2)
 	                VirtualInputManager:SendMouseButtonEvent(CenterXShakeButton, CenterYShakeButton, 0, true, LocalPlayer, 0)
 	                VirtualInputManager:SendMouseButtonEvent(CenterXShakeButton, CenterYShakeButton, 0, false, LocalPlayer, 0)
-	
 	            elseif Options["auto_fish_config_shake_method"].Value == "UINavigation" then
-	                GuiService.GuiNavigationEnabled = Options["auto_fish_shake"].Value
 	                GuiService.SelectedObject = ShakeButton
 	                if GuiService.GuiNavigationEnabled and GuiService.SelectedObject == ShakeButton then
 	                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
@@ -536,7 +545,7 @@ RunService.RenderStepped:Connect(function()
     --// Short Code
 	if Options["modifications_walkspeed_enabled"].Value then
         local v1ws, v2ws = LocalPlayer.Character.HumanoidRootPart, LocalPlayer.Character.Humanoid
-        v1ws.CFrame = v1ws.CFrame + v2ws.MoveDirection * WalkspeedCFrameAmount or 5
+        v1ws.CFrame = v1ws.CFrame + v2ws.MoveDirection * WalkspeedCFrameAmount
     end
 	if Options["inventory_auto_favorite"].Value then
 		FavoriteItem(FishForceFavoriteName)
@@ -548,8 +557,8 @@ end)
 
 RunService.RenderStepped:Connect(function()
     local CurrentTime = tick()
-    local AutoEventZoneYValue = 6
-    local AutoFarmObjYValue = 4
+    local AutoEventZoneYValue = 3
+    local AutoFarmObjYValue = 2
     
     --// Auto Megalodon
     if Options["auto_fish_megalodon"].Value and Character then
@@ -617,6 +626,40 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
+local ItemBought = 0
+local BuyingInProgress = false
+local LastPurchaseTime = 0
+RunService.RenderStepped:Connect(function()
+    local ChosenAutoBuyDelay = Options["auto_buy_item_delay"].Value or 0.5
+    if Options["auto_buy"].Value and Character and not BuyingInProgress then
+        local CurrentTime = tick()
+        if CurrentTime - LastPurchaseTime >= ChosenAutoBuyDelay then
+            local DialogUI = PlayerGui:FindFirstChild("over")
+            if DialogUI then
+                local PromptUI = DialogUI:FindFirstChild("prompt")
+                local PromptConfirmButton = PromptUI and PromptUI:FindFirstChild("confirm")
+                if PromptUI and PromptConfirmButton then
+                    BuyingInProgress = true
+                    local ChosenItemCFrame = AutoBuy.Items[AutoBuy.ChosenAutoBuy]
+                    if ChosenItemCFrame then
+                        Character.HumanoidRootPart.CFrame = ChosenItemCFrame
+                    end
+                    GuiService.SelectedObject = PromptConfirmButton
+                    if GuiService.GuiNavigationEnabled and GuiService.SelectedObject == PromptConfirmButton then
+                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+                        ItemBought = ItemBought + 1
+                    end
+                end
+            end
+            LastPurchaseTime = tick()
+            if ItemBought >= ChosenAutoBuyAmount then
+                BuyingInProgress = false
+            end
+        end
+    end
+end)
+
 PlayerGUI.ChildAdded:Connect(function(Child)
     if not (Child:IsA("ScreenGui") and Child.Name == "reel") then return end
     local ReelEvent = ReplicatedStorage:WaitForChild("events"):WaitForChild("reelfinished")
@@ -624,22 +667,21 @@ PlayerGUI.ChildAdded:Connect(function(Child)
         task.spawn(function()
             while Child and Child.Parent and ReelEvent do
                 task.wait()
-                local Mode = Options["auto_fish_config_reel_mode"].Value
-                if Mode == "Instant" then
+                if Options["auto_fish_config_reel_mode"].Value == "Instant" then
                     ReelEvent:FireServer(100, 1)
-                elseif Mode == "Filled" then
+                elseif Options["auto_fish_config_reel_mode"].Value == "Filled" then
                     local ReelBar = Child:FindFirstChild("bar")
                     local ReelPlayerBar = ReelBar and ReelBar:FindFirstChild("playerbar")
                     if ReelPlayerBar then
                         ReelPlayerBar.Size = UDim2.new(1, 0, 1, 0)
                     end
-                elseif Mode == "Legit" then
+                elseif Options["auto_fish_config_reel_mode"].Value == "Legit" then
                     local PlayerBar = Child:FindFirstChild("bar") and Child.bar:FindFirstChild("playerbar")
                     local FishBar = Child:FindFirstChild("bar") and Child.bar:FindFirstChild("fish")
                     if PlayerBar and FishBar then
                         PlayerBar.Position = FishBar.Position
                     end
-                elseif Mode == "Fail" then
+                elseif Options["auto_fish_config_reel_mode"].Value == "Fail" then
                     ReelEvent:FireServer(5, 1)
                 end
             end
@@ -653,7 +695,6 @@ if game:GetService("UserInputService").TouchEnabled then
     SetDraggable(ImageButton, 41)
     local UICorner = Instance.new("UICorner", ImageButton)
     ScreenGui.DisplayOrder = 9999
-
     ImageButton.BorderSizePixel = 0
     ImageButton.BackgroundTransparency = 0
     ImageButton.BackgroundColor3 = Color3.new(1, 1, 1)
@@ -681,6 +722,25 @@ if LocalPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChil
     local cframeString = string.format("CFrame.new(%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f)", cframe:GetComponents())
     setclipboard(cframeString)
 end
+
+-- copy ur SelectedObject GuiObject useful for finding ui to make auto stuff
+local GuiService = game:GetService("GuiService")
+local function getFullPath(guiObject)
+    if not guiObject then
+        return "No object selected"
+    end
+    local path = guiObject.Name
+    local parent = guiObject.Parent
+    while parent do
+        path = parent.Name .. "." .. path
+        parent = parent.Parent
+    end
+    return path
+end
+GuiService:GetPropertyChangedSignal("SelectedObject"):Connect(function()
+    local selected = GuiService.SelectedObject
+    print("Currently selected object:", getFullPath(selected))
+end)
 
 -- remote
 ReplicatedStorage.events.finishedloading:FireServer()
