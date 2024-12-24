@@ -1,20 +1,21 @@
-local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local GuiService = game:GetService("GuiService")
-local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
+local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character
-local Camera = workspace.CurrentCamera
 local PlayerGUI = LocalPlayer.PlayerGui
+local Character = LocalPlayer.Character
 local Humanoid = Character:WaitForChild("Humanoid")
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+local Camera = Workspace.CurrentCamera
 
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
@@ -194,6 +195,14 @@ local AutoBuy = {
 		["Quality Bait Crate"] = CFrame.new(-175.573959, 143.273819, 1933.769897, -0.862027, -0.000000, 0.506862, -0.000000, 1.000000, -0.000000, -0.506862, -0.000000, -0.862027)
 	}
 }
+local EventFish = {
+    "Megalodon Default",
+    "Megalodon Ancient",
+    "Great White Shark",
+    "Whale Shark",
+    "The Depths - Serpent",
+    "Isonade"
+}
 
 local islandNames = {}
 local NPCNames = {}
@@ -277,6 +286,7 @@ do
 	    Tabs.Main:AddToggle("auto_fish_isonade", {Title = "Auto Isonade", Default = false })
 	    Tabs.Main:AddToggle("auto_fish_whale_shark", {Title = "Auto Whale Shark", Default = false })
 	    Tabs.Main:AddToggle("auto_fish_great_white_shark", {Title = "Auto Great Whale Shark", Default = false })
+    	Tabs.Main:AddToggle("auto_fish_ancient_depth_serpent", {Title = "Auto Ancient Depth Serpent", Default = false })
     	Tabs.Main:AddToggle("auto_fish_event_fish_sundial", {Title = "Auto Sundial", Default = false })
     end
 end
@@ -309,24 +319,23 @@ end
 do
    --// Auto Buy Main Settings
    local Shop_Auto_Buy_Settings = Tabs.Shop:AddSection("Auto Buy Settings") do
-		Tabs.Shop:AddInput("auto_buy_item_delay", {Title = "Auto Buy Delay", Default = "1", Placeholder = "1", Callback = function(v)
-	        getgenv().ChosenAutoBuyDelay = tonumber(v or 0.5)
-        end})
-		Tabs.Shop:AddInput("auto_buy_item_amount", {Title = "Amount to Buy", Default = "10", Placeholder = "10", Callback = function(v)
-	        getgenv().ChosenAutoBuyAmount = tonumber(v or 10)
-        end})
-    end
-    
-    --// Auto Buy
-    local Shop_Auto_Buy = Tabs.Shop:AddSection("Auto Buy") do
         Tabs.Shop:AddToggle("auto_buy", {Title = "Auto Buy", Default = false })
         Tabs.Shop:AddDropdown("auto_buy_item_dropdown", {Title = "Choose items", Default = 1, Values = AutoBuyItems, Callback = function(v)
 		    AutoBuy.ChosenAutoBuy = v
 		end})
+		Tabs.Shop:AddInput("auto_buy_item_delay", {Title = "Auto Buy Delay", Default = "1", Placeholder = "1", Callback = function(v)
+	        getgenv().AutoBuyDelay = tonumber(v or 0.5)
+        end})
+		Tabs.Shop:AddInput("auto_buy_item_amount", {Title = "Amount to Buy", Default = "10", Placeholder = "10", Callback = function(v)
+	        getgenv().AutoBuyAmount = tonumber(v or 10)
+        end})
     end
     local Shop_Merlin = Tabs.Shop:AddSection("Merlin") do
 	    Tabs.Shop:AddToggle("merlin_auto_buy_relic", {Title = "Auto Buy Relic", Description = "Relic Price: 11,000C$", Default = false })
 	    Tabs.Shop:AddToggle("merlin_auto_buy_luck", {Title = "Auto Buy Luck", Description = "Luck Price: 5,000C$", Default = false })
+	    Tabs.Shop:AddInput("merlin_auto_buy_amount", {Title = "Amount to Buy", Default = "10", Placeholder = "10", Callback = function(v)
+	        getgenv().MerlinAutoBuyAmount = tonumber(v or 10)
+        end})
     end
 end
 
@@ -438,7 +447,7 @@ do
 	
 	--// Notifications
 	local Notifications = Tabs.Miscellaneous:AddSection("Notifications") do
-	    Tabs.Miscellaneous:AddToggle("miscellaneous_notify_zone_event", {Title = "Notify Zone Event", Default = false })
+	    Tabs.Miscellaneous:AddToggle("miscellaneous_notify_zone_event", {Title = "Notify Zone Event", Default = true })
     	Tabs.Miscellaneous:AddToggle("miscellaneous_player_joinorleft_log", {Title = "Player Left/Join", Default = false })
 	end
 	local HideIdentity = Tabs.Miscellaneous:AddSection("Hide Identity") do
@@ -487,6 +496,20 @@ do
 end
 
 RunService.RenderStepped:Connect(function()
+	local NukeMinigameUI = PlayerGui:WaitForChild("NukeMinigame")
+	if Options["auto_fish_nuke_minigame"].Value and NukeMinigameUI then
+	    local NukeMinigameArrow = NukeMinigameUI:FindFirstChild("Center") and NukeMinigameUI.Center:FindFirstChild("Marker") and NukeMinigameUI.Center.Marker:WaitForChild("Pointer")
+	    if NukeMinigameArrow then
+	        if NukeMinigameArrow.Rotation > 50 then
+	            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, nil)
+	        elseif NukeMinigameArrow.Rotation < -50 then
+	            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, nil)
+	        end
+	    end
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
     --// Auto Fish Code
 	if Options["auto_fish_cast"].Value and Character then
 	    local Tool = Character:FindFirstChildOfClass("Tool")
@@ -523,26 +546,23 @@ RunService.RenderStepped:Connect(function()
 	
 	--// Miscellaneous Code
     if Character then
-        local ClientOxygen = Character:FindFirstChild("client") and Character.client:FindFirstChild("oxygen")
-        local ClientMountainPeakOxygen = Character.client:FindFirstChild("oxygen(peaks)")
-        local ClientTemperature = Character:FindFirstChild("client") and Character.client:FindFirstChild("temperature")
-        if ClientOxygen then
-            if Options["miscellaneous_infinite_oxygen"].Value then
-                ClientOxygen.Disabled = true
-                ClientMountainPeakOxygen.Disabled = true
-            else
-                ClientOxygen.Disabled = false
-                ClientMountainPeakOxygen.Disabled = false
-            end
-        end
-        if ClientTemperature then
-            if Options["miscellaneous_infinite_temperature"].Value then
-                ClientTemperature.Disabled = true
-            else
-                ClientTemperature.Disabled = false
-            end
-        end
-    end
+	    local Client = Character:FindFirstChild("client")
+	    if Client then
+	        local ClientOxygen = Client:FindFirstChild("oxygen")
+	        local ClientMountainPeakOxygen = Client:FindFirstChild("oxygen(peaks)")
+	        local ClientTemperature = Client:FindFirstChild("temperature")
+	        if ClientOxygen then
+	            local DisableOxygen = Options["miscellaneous_infinite_oxygen"].Value
+	            ClientOxygen.Disabled = DisableOxygen
+	            if ClientMountainPeakOxygen then
+	                ClientMountainPeakOxygen.Disabled = DisableOxygen
+	            end
+	        end
+	        if ClientTemperature then
+	            ClientTemperature.Disabled = Options["miscellaneous_infinite_temperature"].Value
+	        end
+	    end
+	end
     
     if Options["miscellaneous_anchor_body"].Value and Humanoid and HumanoidRootPart then
         HumanoidRootPart.Anchored = true
@@ -570,62 +590,72 @@ RunService.RenderStepped:Connect(function()
     
     --// Auto Megalodon
     if Options["auto_fish_megalodon"].Value and Character then
-        local MegalodonDefault = Workspace.zones.fishing:FindFirstChild("Megalodon Default")
-        local MegalodonAncient = Workspace.zones.fishing:FindFirstChild("Megalodon Ancient")
+        local MegalodonDefault = Workspace.zones.fishing:WaitForChild("Megalodon Default")
+        local MegalodonAncient = Workspace.zones.fishing:WaitForChild("Megalodon Ancient")
         if MegalodonDefault then
             Character.HumanoidRootPart.CFrame = MegalodonDefault.CFrame + Vector3.new(0, AutoEventZoneYValue, 0)
             AutoFarmObj.CFrame = MegalodonDefault.CFrame + Vector3.new(0, -AutoFarmObjYValue, 0)
             return
         elseif MegalodonAncient then
             Character.HumanoidRootPart.CFrame = MegalodonAncient.CFrame + Vector3.new(0, AutoEventZoneYValue, 0)
-            AutoFarmObj.CFrame = MegalodonAncient.CFrame + Vector3.new(0, -AutoFarmObjValue, 0)
+            AutoFarmObj.CFrame = MegalodonAncient.CFrame + Vector3.new(0, -AutoFarmObjYValue, 0)
             return
         end
     end
     
     --// Auto Whale Shark
     if Options["auto_fish_whale_shark"].Value and Character then
-        local WhaleShark = Workspace.zones.fishing:FindFirstChild("Whale Shark")
+        local WhaleShark = Workspace.zones.fishing:WaitForChild("Whale Shark")
         if WhaleShark then
             Character.HumanoidRootPart.CFrame = WhaleShark.CFrame + Vector3.new(0, AutoEventZoneYValue, 0)
-            AutoFarmObj.CFrame = WhaleShark.CFrame + Vector3.new(0, -AutoFarmObjValue, 0)
+            AutoFarmObj.CFrame = WhaleShark.CFrame + Vector3.new(0, -AutoFarmObjYValue, 0)
             return
         end
     end
     
     --// Auto Isonade
     if Options["auto_fish_isonade"].Value and Character then
-        local Isonade = Workspace.zones.fishing:FindFirstChild("Isonade")
+        local Isonade = Workspace.zones.fishing:WaitForChild("Isonade")
         if Isonade then
             Character.HumanoidRootPart.CFrame = Isonade.CFrame + Vector3.new(0, AutoEventZoneYValue, 0)
-            AutoFarmObj.CFrame = Isonade.CFrame + Vector3.new(0, -AutoFarmObjValue, 0)
+            AutoFarmObj.CFrame = Isonade.CFrame + Vector3.new(0, -AutoFarmObjYValue, 0)
             return
         end
     end
     
     --// Great White Shark
-    if Options["auto_fish_great_white_shark"].Value then
-		local GreatWhiteShark = Workspace.active:FindFirstChild("Great White Shark")
-		if GreatWhiteShark then
-			Character.HumanoidRootPart.CFrame = GreatWhiteShark.RootPart.CFrame + Vector3.new(0, AutoEventZoneYValue, 0)
-			AutoFarmObj.CFrame = GreatWhiteShark.CFrame + Vector3.new(0, -AutoFarmObjValue, 0)
-			return
-		end
-	end
-	
-	--// Auto Pop Sundial
-	if Options["auto_fish_event_fish_sundial"].Value then
-	    local SundialTotemCooldown = 5.5
-	    LastSundialPopTime = LastSundialPopTime or 0
-	    if CurrentTime - LastSundialPopTime >= SundialTotemCooldown then
-	        Equip("Sundial Totem")
-	        local Tool = Character:FindFirstChildOfClass("Tool")
-	        if Tool and Tool.Name == "Sundial Totem" then
-	            Tool:Activate()
-	            LastSundialPopTime = CurrentTime
-	        end
-	    end
-	end
+    if Options["auto_fish_great_white_shark"].Value and Character then
+        local GreatWhiteShark = Workspace.active:WaitForChild("Great White Shark")
+        if GreatWhiteShark then
+            Character.HumanoidRootPart.CFrame = GreatWhiteShark.RootPart.CFrame + Vector3.new(0, AutoEventZoneYValue, 0)
+            AutoFarmObj.CFrame = GreatWhiteShark.CFrame + Vector3.new(0, -AutoFarmObjYValue, 0)
+            return
+        end
+    end
+
+    --// Ancient Depth Serpent
+    if Options["auto_fish_ancient_depth_serpent"].Value and Character then
+        local AncientDepthSerpent = Workspace.active.fishing:WaitForChild("The Depths - Serpent")
+        if AncientDepthSerpent then
+            Character.HumanoidRootPart.CFrame = AncientDepthSerpent.RootPart.CFrame + Vector3.new(0, AutoEventZoneYValue, 0)
+            AutoFarmObj.CFrame = AncientDepthSerpent.CFrame + Vector3.new(0, -AutoFarmObjYValue, 0)
+            return
+        end
+    end
+    
+    --// Auto Pop Sundial
+    if Options["auto_fish_event_fish_sundial"].Value and Character then
+        local SundialTotemCooldown = 5.5
+        LastSundialPopTime = LastSundialPopTime or 0
+        if CurrentTime - LastSundialPopTime >= SundialTotemCooldown then
+            Equip("Sundial Totem")
+            local Tool = Character:FindFirstChildOfClass("Tool")
+            if Tool and Tool.Name == "Sundial Totem" then
+                Tool:Activate()
+                LastSundialPopTime = CurrentTime
+            end
+        end
+    end
 end)
 
 UserInputService.JumpRequest:Connect(function()
@@ -634,36 +664,15 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
-local ItemBought = 0
-local BuyingInProgress = false
-local LastPurchaseTime = 0
-RunService.RenderStepped:Connect(function()
-    local ChosenAutoBuyDelay = Options["auto_buy_item_delay"].Value or 0.5
-    if Options["auto_buy"].Value and Character and not BuyingInProgress then
-        local CurrentTime = tick()
-        if CurrentTime - LastPurchaseTime >= ChosenAutoBuyDelay then
-            local DialogUI = PlayerGui:FindFirstChild("over")
-            if DialogUI then
-                local PromptUI = DialogUI:FindFirstChild("prompt")
-                local PromptConfirmButton = PromptUI and PromptUI:FindFirstChild("confirm")
-                if PromptUI and PromptConfirmButton then
-                    BuyingInProgress = true
-                    local ChosenItemCFrame = AutoBuy.Items[AutoBuy.ChosenAutoBuy]
-                    if ChosenItemCFrame then
-                        Character.HumanoidRootPart.CFrame = ChosenItemCFrame
-                    end
-                    GuiService.SelectedObject = PromptConfirmButton
-                    if GuiService.GuiNavigationEnabled and GuiService.SelectedObject == PromptConfirmButton then
-                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-                        ItemBought = ItemBought + 1
-                    end
-                end
-            end
-            LastPurchaseTime = tick()
-            if ItemBought >= ChosenAutoBuyAmount then
-                BuyingInProgress = false
-            end
+local FishingZone = Workspace.active or Workspace.zones.fishing
+FishingZone.ChildAdded:Connect(function(Child)
+    if Options["miscellaneous_notify_zone_event"].Value and FishingZone then
+        if table.find(EventFish, Child.Name) then
+            Fluent:Notify({
+                Title = "Event Fish Spotted!",
+                Content = "A rare event fish, " .. Child.Name .. ", has been detected!",
+                Duration = 3
+            })
         end
     end
 end)
