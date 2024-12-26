@@ -682,7 +682,7 @@ FishingZone.ChildAdded:Connect(function(Child)
     end
 end)
 
-PlayerGUI.ChildAdded:Connect(function(Child)
+PlayerGui.ChildAdded:Connect(function(Child)
     if not (Child:IsA("ScreenGui") and Child.Name == "reel") then return end
     local ReelEvent = ReplicatedStorage:WaitForChild("events"):WaitForChild("reelfinished")
     if Options["auto_fish_reel"].Value then
