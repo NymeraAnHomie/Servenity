@@ -140,7 +140,7 @@ end
 local function FavoriteItem(ToolName)
     for _, Tool in pairs(LocalPlayer.Backpack:GetChildren()) do
         if string.find(Tool.Name, ToolName) then
-            PlayerGui.hud.safezone.backpack.events.favourite:FireServer(LocalPlayer.Backpack[Tool].Name)
+            PlayerGui.hud.safezone.backpack.events.favourite:FireServer(LocalPlayer.Backpack[Tool])
             return
         end
     end
@@ -192,8 +192,9 @@ local AutoBuy = {
 	Items = {
 		["Crab Cage"] = CFrame.new(-921.549194, 131.078812, -1106.665894, -0.967867, 0.000000, 0.251462, 0.000000, 1.000000, 0.000000, -0.251462, 0.000000, -0.967867),
 		["Bait Crate"] = CFrame.new(385.700500, 136.994141, 335.602051, -0.848685, -0.000000, -0.528898, -0.000000, 1.000000, -0.000000, 0.528898, -0.000000, -0.848685),
-		["Quality Bait Crate"] = CFrame.new(-175.573959, 143.273819, 1933.769897, -0.862027, -0.000000, 0.506862, -0.000000, 1.000000, -0.000000, -0.506862, -0.000000, -0.862027)
-	}
+		["Quality Bait Crate"] = CFrame.new(-175.573959, 143.273819, 1933.769897, -0.862027, -0.000000, 0.506862, -0.000000, 1.000000, -0.000000, -0.506862, -0.000000, -0.862027),
+		["Coral Geode"] = CFrame.new(-1643.960327, -213.679443, -2848.067627, -0.996809, 0.000000, 0.079825, 0.000000, 1.000000, 0.000000, -0.079825, 0.000000, -0.996809)
+	},
 }
 local EventFish = {
     "Megalodon Default",
@@ -495,8 +496,34 @@ do
 	SaveManager:LoadAutoloadConfig()
 end
 
+local LastAutoBuyTime = 0
+local PurchaseCount = 0
 RunService.RenderStepped:Connect(function()
-	
+    if Options["auto_buy"].Value then
+        if tick() - LastAutoBuyTime < AutoBuyDelay then return end
+        if AutoBuyAmount and PurchaseCount >= AutoBuyAmount then
+            Options["auto_buy"]:SetValue(false)
+            return
+        end
+        local DialogUI = PlayerGui:FindFirstChild("over")
+        local PromptUI = DialogUI and DialogUI.Enabled and DialogUI:FindFirstChild("prompt")
+        local ConfirmPromptButton = PromptUI and PromptUI:FindFirstChild("confirm")
+        local PromptAmountButton = PromptUI and PromptUI:FindFirstChild("amount")
+        Character.HumanoidRootPart.CFrame = AutoBuy.Items[AutoBuy.ChosenAutoBuy]
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+        if ConfirmPromptButton and ConfirmPromptButton.Visible then
+            if AutoBuy.Items and Character and HumanoidRootPart then
+                GuiService.SelectedObject = ConfirmPromptButton
+                if GuiService.GuiNavigationEnabled and GuiService.SelectedObject == ConfirmPromptButton then
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+                    PurchaseCount = PurchaseCount + 1
+                end
+                LastAutoBuyTime = tick()
+            end
+        end
+    end
 end)
 
 RunService.RenderStepped:Connect(function()
