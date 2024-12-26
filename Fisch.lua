@@ -11,7 +11,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local Players = game:GetService("Players")
 
 local LocalPlayer = Players.LocalPlayer
-local PlayerGUI = LocalPlayer.PlayerGui
+local PlayerGui = LocalPlayer.PlayerGui
 local Character = LocalPlayer.Character
 local Humanoid = Character:WaitForChild("Humanoid")
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
@@ -419,7 +419,7 @@ do
 	local Modifications = Tabs.Miscellaneous:AddSection("Modifications") do
 	    Tabs.Miscellaneous:AddToggle("modifications_walkspeed_enabled", {Title = "Walkspeed", Default = false })
     	Tabs.Miscellaneous:AddInput("modifications_walkspeed_speed_amount", {Title = "Walkspeed Amount", Default = "5", Placeholder = "5", Callback = function(v)
-			getgenv().WalkspeedCFrameAmount = tostring(v or 5)
+			getgenv().WalkspeedCFrameAmount = tonumber(v or 5)
         end})
         Tabs.Miscellaneous:AddToggle("modifications_inf_jump", {Title = "Infinite Jump", Default = false })
 	end
@@ -496,17 +496,7 @@ do
 end
 
 RunService.RenderStepped:Connect(function()
-	local NukeMinigameUI = PlayerGui:WaitForChild("NukeMinigame")
-	if Options["auto_fish_nuke_minigame"].Value and NukeMinigameUI then
-	    local NukeMinigameArrow = NukeMinigameUI:FindFirstChild("Center") and NukeMinigameUI.Center:FindFirstChild("Marker") and NukeMinigameUI.Center.Marker:WaitForChild("Pointer")
-	    if NukeMinigameArrow then
-	        if NukeMinigameArrow.Rotation > 50 then
-	            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, nil)
-	        elseif NukeMinigameArrow.Rotation < -50 then
-	            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, nil)
-	        end
-	    end
-	end
+	
 end)
 
 RunService.RenderStepped:Connect(function()
@@ -539,6 +529,21 @@ RunService.RenderStepped:Connect(function()
 	                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
 	                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
 	                end
+	            end
+	        end
+	    end
+	end
+	
+	--// Auto Nuke Minigame
+	if Options["auto_fish_nuke_minigame"].Value then
+	    local NukeMinigameUI = PlayerGui:FindFirstChild("NukeMinigame")
+	    if NukeMinigameUI and NukeMinigameUI:FindFirstChild("Center") then
+	        local NukeMinigameArrow = NukeMinigameUI.Center.Marker:FindFirstChild("Pointer")
+	        if NukeMinigameUI.Enabled and NukeMinigameArrow and NukeMinigameArrow.Visible then
+	            if NukeMinigameArrow.Rotation > 60 then
+	                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, nil)
+	            elseif NukeMinigameArrow.Rotation < -60 then
+	                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, nil)
 	            end
 	        end
 	    end
@@ -585,8 +590,8 @@ end)
 
 RunService.RenderStepped:Connect(function()
     local CurrentTime = tick()
-    local AutoEventZoneYValue = 4.5
-    local AutoFarmObjYValue = 3
+    local AutoEventZoneYValue = 12.5
+    local AutoFarmObjYValue = 0
     
     --// Auto Megalodon
     if Options["auto_fish_megalodon"].Value and Character then
@@ -617,7 +622,7 @@ RunService.RenderStepped:Connect(function()
     if Options["auto_fish_isonade"].Value and Character then
         local Isonade = Workspace.zones.fishing:WaitForChild("Isonade")
         if Isonade then
-            Character.HumanoidRootPart.CFrame = Isonade.CFrame + Vector3.new(0, AutoEventZoneYValue, 0)
+            Character.HumanoidRootPart.CFrame = Isonade.CFrame + Vector3.new(0, AutoEventZoneYValue , 0)
             AutoFarmObj.CFrame = Isonade.CFrame + Vector3.new(0, -AutoFarmObjYValue, 0)
             return
         end
