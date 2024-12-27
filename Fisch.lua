@@ -535,21 +535,18 @@ RunService.RenderStepped:Connect(function()
     local SafeZoneUI = PlayerGui:FindFirstChild("options") and PlayerGui.options:FindFirstChild("safezone")
     local RespondMessageOption1 = SafeZoneUI and SafeZoneUI:FindFirstChild("1option") and SafeZoneUI["1option"]:FindFirstChild("button")
     local RespondMessageOption2 = SafeZoneUI and SafeZoneUI:FindFirstChild("2option") and SafeZoneUI["2option"]:FindFirstChild("button")    
-    local function buy(option)
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-    end
     if Options["merlin_auto_buy_luck"].Value then
         
     elseif Options["merlin_auto_buy_relic"].Value then
         Character.HumanoidRootPart.CFrame = CFrame.new(-928.971863, 225.730988, -995.030945, -0.610376, 0, -0.792112, 0, 1, 0, 0.792112, 0, -0.610376)
         GuiService.SelectedObject = RespondMessageOption1
-        buy(RespondMessageOption1)
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
         MerlinPurchaseCount = MerlinPurchaseCount + 1
-    end
-    if not SafeZoneUI then
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+        if not SafeZoneUI then
+	        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+	        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+	    end
     end
     if MerlinPurchaseCount == AutoBuyAmount then
         Options["merlin_auto_buy_luck"]:SetValue(false)
