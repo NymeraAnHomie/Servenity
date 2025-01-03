@@ -138,7 +138,9 @@ local Location = {
 		["Hidden Bellkeeper"] = CFrame.new(4272.542480, -467.906494, 3901.058350, 0.995006, -0.000000, 0.099818, 0.000000, 1.000000, -0.000000, -0.099818, 0.000000, 0.995006),
 		["Prism Troll Arena"] = CFrame.new(724.753174, -15.909891, 52.852535, -0.113037, 0.000000, 0.993591, 0.000000, 1.000000, -0.000000, -0.993591, 0.000000, -0.113037),
 		["Purple Shark Arena"] = CFrame.new(-2008.019653, -695.037781, -536.772400, -0.721517, 0.000000, 0.692396, 0.000000, 1.000000, 0.000000, -0.692396, 0.000000, -0.721517),
-		["Big Iron"] = CFrame.new(2328.838623, -17.500006, -3243.009277, 0.999465, -0.000000, -0.032718, 0.000000, 1.000000, -0.000000, 0.032718, 0.000000, 0.999465)
+		["Big Iron"] = CFrame.new(2328.838623, -17.500006, -3243.009277, 0.999465, -0.000000, -0.032718, 0.000000, 1.000000, -0.000000, 0.032718, 0.000000, 0.999465),
+		["Unfair Fight"] = CFrame.new(4470.296875, -329.125580, -2199.090576, 0.006444, -0.000000, 0.999979, 0.000000, 1.000000, 0.000000, -0.999979, 0.000000, 0.006444),
+		["Patris Island"] = CFrame.new(-3117.919678, -21.224762, -4241.643066, 0.973629, -0.000000, -0.228137, 0.000000, 1.000000, 0.000000, 0.228137, -0.000000, 0.973629)
     },
 	CatacombLevers = {
 		["Lever 1"] = CFrame.new(5205.883789, -279.500092, 481.946106, -0.761892, 0.000000, 0.647704, 0.000000, 1.000000, -0.000000, -0.647704, 0.000000, -0.761892),
@@ -146,6 +148,10 @@ local Location = {
 		["Lever 3"] = CFrame.new(4991.687012, -279.500092, 389.135803, 0.053997, 0.000000, 0.998541, 0.000000, 1.000000, -0.000000, -0.998541, 0.000000, 0.053997),
 		["Catacomb Arena"] = CFrame.new(5356.958496, -403.500092, 317.145111, 0.999997, -0.000000, 0.002545, 0.000000, 1.000000, -0.000000, -0.002545, 0.000000, 0.999997)
 	},
+	Cataseeds = {
+		["Seed 1"] = CFrame.new(4979.690430, -343.090027, 611.070740, 0.999845, -0.000000, -0.017632, 0.000000, 1.000000, 0.000000, 0.017632, -0.000000, 0.999845),
+		["Seed 2"] = CFrame.new(5121.161621, -343.500092, 537.244568, -0.764907, 0.000000, -0.644141, -0.000000, 1.000000, 0.000000, 0.644141, 0.000000, -0.764907)	
+	}
 }
 local Original = {
 	FogEnd = Lighting.FogEnd,
@@ -157,6 +163,7 @@ local Original = {
 local IslandListsDropdown = {}
 local LeverListsDropdown = {}
 local NPCsListsDropdown = {}
+local CataseedsListsDropdown = {}
 
 for island in pairs(Location.Islands) do
     table.insert(IslandListsDropdown, island)
@@ -168,6 +175,9 @@ for _, NPC in pairs(workspace.NPCs:GetChildren()) do
     if NPC:FindFirstChild("HumanoidRootPart") and not (string.find(NPC.Name, "Sign") or string.find(NPC.Name, "Dock")) then
         table.insert(NPCsListsDropdown, NPC.Name)
     end
+end
+for Cataseeds in pairs(Location.Cataseeds) do
+    table.insert(CataseedsListsDropdown, Cataseeds)
 end
 
 local Window = Fluent:CreateWindow({
@@ -198,8 +208,10 @@ do
     local Main_Auto_Parry = Tabs.Main:AddSection("Auto Parry") do
         Tabs.Main:AddToggle("main_auto_parry_toggle", {Title = "Auto Parry", Default = false })
         Tabs.Main:AddDropdown("main_auto_parry_method", {Title = "Perfect Block", Default = 1, Values = {"Retry", "Add"} })
-        Tabs.Main:AddToggle("main_auto_parry_ping_based", {Title = "Ping Based", Default = false })
-        Tabs.Main:AddInput("main_auto_parry_delay", {Title = "Auto Parry Delay", Default = "0.0131515102323", Placeholder = "0", Callback = function(v)
+        Tabs.Main:AddInput("main_auto_parry_radius", {Title = "Auto Parry Radius", Default = "5", Callback = function(v)
+			getgenv().AutoParryRadius = tonumber(v)
+        end})
+        Tabs.Main:AddInput("main_auto_parry_delay", {Title = "Auto Parry Delay", Default = "0.0451012524", Callback = function(v)
 			getgenv().AutoParryDelay = tonumber(v)
         end})
     end
@@ -224,8 +236,9 @@ do
 		        Fluent:Notify({Title = "No Tool Found", Content = "No tool equipped. Please equip a tool first.", Duration = 3})
 		    end
 		end})
-		Tabs.Auto:AddParagraph({Title = "Info", Content = "All cash earned will be sent to the bank NPC."})
+		Tabs.Auto:AddToggle("auto_farm_deposit_cash", {Title = "Auto Deposit Cash", Default = false })
         Tabs.Auto:AddToggle("auto_farm_cove_skeleton", {Title = "Auto Farm Cove Skeleton", Default = false })
+        Tabs.Auto:AddToggle("auto_farm_granny", {Title = "Auto Farm Granny", Default = false })
     end
 end
 
@@ -280,8 +293,27 @@ do
 		Tabs.Teleport:AddButton({Title = "Teleport to NPC", Callback = function()
 		    local NPCs = Workspace.NPCs:FindFirstChild(Options["teleport_workspace_npc_dropdown"].Value)
 		    if NPCs then
-		        Character.HumanoidRootPart.CFrame = NPCs.HumanoidRootPart.CFrame
+        		if Options["teleport_workspace_npc_dropdown"].Value == "Hibbalons" then
+					Window:Dialog({Title = "Risky NPC Detected", Content = "Interacting with this NPC may break the NPC teleporter. This cannot be undone.", Buttons = {
+						{Title = "Confirm", Callback = function()
+				            Character.HumanoidRootPart.CFrame = NPCs.HumanoidRootPart.CFrame
+				        end},
+				        {Title = "Cancel", Callback = function()
+				            print("[User]: Has Cancelled The data Dialog")
+				        end}}
+					})
+				else
+					Character.HumanoidRootPart.CFrame = NPCs.HumanoidRootPart.CFrame
+		    	end
 		    end
+		end})
+		Tabs.Teleport:AddButton({Title = "Teleport to Hobo", Callback = function()
+		    local HoboDude = Workspace:FindFirstChild("Hobo")
+			if HoboDude then
+			    Character.HumanoidRootPart.CFrame = HoboDude.HumanoidRootPart.CFrame
+			else
+			    Fluent:Notify({Title = "Notification", Content = "Hobo has not yet spawned.", Duration = 5})
+			end
 		end})
     end
 end
@@ -292,7 +324,7 @@ do
 	local Miscellaneous_Modifications = Tabs.Miscellaneous:AddSection("Modifications") do
 	    Tabs.Miscellaneous:AddToggle("modifications_walkspeed_enabled", {Title = "Walkspeed", Default = false })
     	Tabs.Miscellaneous:AddInput("modifications_walkspeed_speed_amount", {Title = "Walkspeed Amount", Default = "", Placeholder = "5", Callback = function(v)
-			getgenv().WalkspeedCFrameAmount = v
+			getgenv().WalkspeedCFrameAmount = tonumber(v)
         end})
         Tabs.Miscellaneous:AddToggle("modifications_inf_jump", {Title = "Infinite Jump", Default = false })
 	end
@@ -331,7 +363,7 @@ do
     --// Settings
 	local Settings_Exploits_Upper = Tabs.Settings:AddSection("Exploit Settings") do
 		Tabs.Settings:AddButton({Title = "Delete Exploits File", Callback = function()
-		    Window:Dialog({Title = "Delete Exploits File", Content = "Are you sure you want to reset your data? This action cannot be unthenne.", Buttons = {
+		    Window:Dialog({Title = "Delete Exploits File", Content = "Are you sure you want to reset your data? This action cannot be undone.", Buttons = {
 				{Title = "Confirm", Callback = function()
 		            for _, v in next, {"Servenity"} do 
 						if isfolder(v) then 
@@ -371,13 +403,13 @@ end
 local LastParryTime = 0
 RunService.RenderStepped:Connect(function()
     if Options["main_auto_parry_toggle"].Value then
+        -- Radius To Activate Block Remote: AutoParryRadiusObj
+        -- Block Remote Activate if there a "Workspace.Mobs" nearby
         local CurrentTime = tick()
-        if CurrentTime - LastParryTime >= (tonumber(AutoParryDelay) or 0.013) then
+        if CurrentTime - LastParryTime >= (tonumber(AutoParryDelay) or 0.0451012524) then
             if Options["main_auto_parry_method"].Value == "Retry" then
                 if not Character:FindFirstChild("PerfectBlock") then
-                    ReplicatedStorage.Remotes.Block:FireServer(false)
                     ReplicatedStorage.Remotes.Block:FireServer(true)
-                    ReplicatedStorage.Remotes.Block:FireServer(false)
                 end
                 if not Character:FindFirstChild("Parrying") then
                     local Parrying = Instance.new("BoolValue", Character)
@@ -385,7 +417,6 @@ RunService.RenderStepped:Connect(function()
                     Parrying.Value = true
                 end
             elseif Options["main_auto_parry_method"].Value == "Add" then
-                ReplicatedStorage.Remotes.Block:FireServer(false)
                 ReplicatedStorage.Remotes.Block:FireServer(true)
                 if not Character:FindFirstChild("PerfectBlock") then
                     local PerfectBlock = Instance.new("BoolValue", Character)
@@ -400,6 +431,7 @@ RunService.RenderStepped:Connect(function()
             end
             LastParryTime = CurrentTime
         end
+        ReplicatedStorage.Remotes.Block:FireServer(false)
     end
 
     if Options["modifications_walkspeed_enabled"].Value then
@@ -460,10 +492,13 @@ end)
 
 --// Auto Farm
 RunService.RenderStepped:Connect(function()
+    local Tool = Character:FindFirstChildOfClass("Tool")
+    local Mobs = Workspace:FindFirstChild("Mobs")
+    if Options["auto_farm_deposit_cash"].Value then
+	    ReplicatedStorage.Remotes.Bank:InvokeServer(true, 1)
+    end
     if Options["auto_farm_cove_skeleton"].Value then
-        local Skeleton = Workspace.Mobs:FindFirstChild("The Skeleton")
-        local Tool = Character:FindFirstChildOfClass("Tool")
-        ReplicatedStorage.Remotes.Bank:InvokeServer(true, 1)        
+        local Skeleton = Mobs:FindFirstChild("The Skeleton")
         if Skeleton and Skeleton:FindFirstChild("Head") then
             local CoveSkeletonCFrame = Skeleton.Head.CFrame
             UnEquipTool("Tainted Flower")
@@ -481,11 +516,23 @@ RunService.RenderStepped:Connect(function()
             end
         end
     end
+    if Options["auto_farm_granny"].Value then
+        local GrannyRockHitbox = Mobs:FindFirstChild("Granny")
+        if GrannyRockHitbox and GrannyRockHitbox.Granny then
+            local GrannyHitboxCFrame = GrannyRockHitbox.Granny.CFrame
+            ForceEquipTool(AutoFarmToolName)
+            AutoFarmObj.CFrame = GrannyHitboxCFrame + Vector3.new(0, -4.5, 0)
+            Character.HumanoidRootPart.CFrame = AutoFarmObj.CFrame + Vector3.new(0, 3, 0)
+            if Tool then
+                Tool:Activate()
+            end
+        end
+    end
 end)
-
 --// ESP
 local EspCache = {}
 RunService.RenderStepped:Connect(function()
+    local PlayerStatus
     if Options["render_esp_players"].Value then
         for _, Player in ipairs(Players:GetPlayers()) do
             if Player ~= Players.LocalPlayer and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChild("Head") then
@@ -551,17 +598,6 @@ LocalPlayer.CharacterAdded:Connect(function(Char)
     Character = Char
     Humanoid = Character:WaitForChild("Humanoid")
     HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
-    
-	if Options["auto_farm_cove_skeleton"].Value then
-	    local Skeleton = Workspace.Mobs:FindFirstChild("The Skeleton")
-	    local Tool = Character:FindFirstChildOfClass("Tool")
-	    if not Skeleton then
-	        ForceEquipTool("Tainted Flower")
-	    end
-	    if Skeleton then
-		    ForceEquipTool(AutoFarmToolName)
-	    end
-	end
 end)
 
 if game:GetService("UserInputService").TouchEnabled then
@@ -600,11 +636,14 @@ if LocalPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChil
 end
 
 -- remote
+workspace.NPCs:FindFirstChild("Magic Chalkman").Script.RemoteEvent:FireServer()
+workspace.NPCs:FindFirstChild("Thief King").RemoteEvent:FireServer()
+workspace.Hobo.RemoteEvent:FireServer()
+workspace.NPCs.Stray.Script.Manager:FireServer(1)
+Workspace.Mobs.OldFart["Old Fart"].HumanoidRootPart
 
 -- workspace
 
 -- cframe
-seed 1: CFrame.new(4979.690430, -343.090027, 611.070740, 0.999845, -0.000000, -0.017632, 0.000000, 1.000000, 0.000000, 0.017632, -0.000000, 0.999845)
-seed 2: CFrame.new(5121.161621, -343.500092, 537.244568, -0.764907, 0.000000, -0.644141, -0.000000, 1.000000, 0.000000, 0.644141, 0.000000, -0.764907)
 
 ]]
