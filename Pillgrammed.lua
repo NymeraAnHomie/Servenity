@@ -172,7 +172,7 @@ for Lever in pairs(Location.CatacombLevers) do
     table.insert(LeverListsDropdown, Lever)
 end
 for _, NPC in pairs(workspace.NPCs:GetChildren()) do
-    if NPC:FindFirstChild("HumanoidRootPart") and not (string.find(NPC.Name, "Sign") or string.find(NPC.Name, "Dock")) then
+    if NPC:FindFirstChild("HumanoidRootPart") and not (string.find(NPC.Name, "Sign") or string.find(NPC.Name, "Dock")) or string.find(NPC.Name, "Hobo")) then
         table.insert(NPCsListsDropdown, NPC.Name)
     end
 end
