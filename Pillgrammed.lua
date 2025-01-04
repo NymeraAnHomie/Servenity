@@ -10,7 +10,7 @@ local GuiService = game:GetService("GuiService")
 local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
-local PlayerGUI = LocalPlayer.PlayerGui
+local PlayerGui = LocalPlayer.PlayerGui
 local Backpack = LocalPlayer.Backpack
 local Camera = workspace.CurrentCamera
 local ScreenCenter = Camera.ViewportSize / 2
@@ -250,7 +250,9 @@ do
      --// Players
     local Render_ESP = Tabs.Render:AddSection("Visuals") do
         Tabs.Render:AddToggle("render_esp_players", {Title = "ESP Players", Default = false })
-        Tabs.Render:AddToggle("render_esp_players_distance", {Title = "Distance", Default = false })
+        Tabs.Render:AddToggle("render_esp_players_distance", {Title = "Players Distance", Default = false })
+        Tabs.Render:AddToggle("render_esp_rifts", {Title = "ESP Rifts", Default = false })
+        Tabs.Render:AddToggle("render_esp_rifts_distance", {Title = "Rifts Distance", Default = false })
     end
 end
 
@@ -567,70 +569,103 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
 --// ESP
-local EspCache = {}
+local EspCache = {
+    Players = {},
+    Rifts = {}
+}
+local RiftsLocation = {
+    [1] = "Deep Desert",
+    [2] = "Mountain Basin",
+    [3] = "Patchland Grove",
+    [4] = "The Backdoors",
+    [5] = "Strange Chasm",
+    [6] = "Cloud Wilds",
+    [7] = "Light House"
+}
+
 RunService.RenderStepped:Connect(function()
-    local PlayerStatus
+    -- Player ESP
     if Options["render_esp_players"].Value then
         for _, Player in ipairs(Players:GetPlayers()) do
             if Player ~= Players.LocalPlayer and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChild("Head") then
-                if not EspCache[Player] then
-                    EspCache[Player] = {
+                if not EspCache.Players[Player] then
+                    EspCache.Players[Player] = {
                         NameText = Drawing.new("Text"),
                         HpText = Drawing.new("Text")
                     }
-
-                    EspCache[Player].NameText.Size = 18
-                    EspCache[Player].NameText.Color = Color3.fromRGB(255, 255, 255)
-                    EspCache[Player].NameText.Center = true
-                    EspCache[Player].NameText.Outline = true
-                    EspCache[Player].NameText.OutlineColor = Color3.fromRGB(0, 0, 0)
-                    EspCache[Player].NameText.Font = 3
-                    EspCache[Player].HpText.Size = 18
-                    EspCache[Player].HpText.Color = Color3.fromRGB(0, 255, 0)
-                    EspCache[Player].HpText.Center = true
-                    EspCache[Player].HpText.Outline = true
-                    EspCache[Player].HpText.OutlineColor = Color3.fromRGB(0, 0, 0)
-                    EspCache[Player].HpText.Font = 3
+                    local Esp = EspCache.Players[Player]
+                    Esp.NameText.Size, Esp.NameText.Color, Esp.NameText.Center = 18, Color3.fromRGB(255, 255, 255), true
+                    Esp.NameText.Outline, Esp.NameText.OutlineColor, Esp.NameText.Font = true, Color3.fromRGB(0, 0, 0), 2
+                    Esp.HpText.Size, Esp.HpText.Color, Esp.HpText.Center = 18, Color3.fromRGB(0, 255, 0), true
+                    Esp.HpText.Outline, Esp.HpText.OutlineColor, Esp.HpText.Font = true, Color3.fromRGB(0, 0, 0), 2
                 end
-                local Esp = EspCache[Player]
+                local Esp = EspCache.Players[Player]
                 local HeadPosition = Player.Character.Head.Position + Vector3.new(0, 2.5, 0)
                 local ScreenPos, OnScreen = Camera:WorldToViewportPoint(HeadPosition)
                 if OnScreen then
-                    Esp.NameText.Position = Vector2.new(ScreenPos.X, ScreenPos.Y)
-                    Esp.NameText.Visible = true
-                    Esp.NameText.Text = Player.Name
                     local Health = Player.Character:FindFirstChild("Humanoid") and Player.Character.Humanoid.Health or 0
-                    Esp.HpText.Position = Vector2.new(ScreenPos.X, ScreenPos.Y + 20)
-                    Esp.HpText.Visible = true
+                    Esp.NameText.Position, Esp.NameText.Visible = Vector2.new(ScreenPos.X, ScreenPos.Y), true
+                    Esp.NameText.Text = Player.Name
+                    Esp.HpText.Position, Esp.HpText.Visible = Vector2.new(ScreenPos.X, ScreenPos.Y + 20), true
                     Esp.HpText.Text = "HP: " .. math.floor(Health)
                     if Options["render_esp_players_distance"].Value then
                         local Distance = (Player.Character.HumanoidRootPart.Position - Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
                         Esp.NameText.Text = Player.Name .. " (" .. math.floor(Distance) .. " studs)"
                     end
                 else
-                    Esp.NameText.Visible = false
-                    Esp.HpText.Visible = false
+                    Esp.NameText.Visible, Esp.HpText.Visible = false, false
                 end
-            elseif EspCache[Player] then
-                EspCache[Player].NameText.Visible = false
-                EspCache[Player].HpText.Visible = false
+            elseif EspCache.Players[Player] then
+                EspCache.Players[Player].NameText.Visible, EspCache.Players[Player].HpText.Visible = false, false
             end
         end
     else
-        for _, Esp in pairs(EspCache) do
-            Esp.NameText.Visible = false
-            Esp.HpText.Visible = false
+        for _, Esp in pairs(EspCache.Players) do
+            Esp.NameText.Visible, Esp.HpText.Visible = false, false
+        end
+    end
+
+    -- Rift ESP
+    if Options["render_esp_rifts"].Value then
+        for i, name in pairs(RiftsLocation) do
+            local rift = Workspace:FindFirstChild("RiftSpawn" .. i)
+            if rift and rift:IsA("BasePart") then
+                if not EspCache.Rifts[i] then
+                    EspCache.Rifts[i] = Drawing.new("Text")
+                    EspCache.Rifts[i].Size, EspCache.Rifts[i].Color, EspCache.Rifts[i].Center = 18, Color3.fromRGB(255, 0, 255), true
+                    EspCache.Rifts[i].Outline, EspCache.Rifts[i].OutlineColor, EspCache.Rifts[i].Font = true, Color3.fromRGB(0, 0, 0), 2
+                end
+                local RiftEsp = EspCache.Rifts[i]
+                local ScreenPos, OnScreen = Camera:WorldToViewportPoint(rift.Position)
+                if OnScreen then
+                    RiftEsp.Position, RiftEsp.Visible = Vector2.new(ScreenPos.X, ScreenPos.Y), true
+                    RiftEsp.Text = name
+                    if Options["render_esp_rifts_distance"].Value then
+                        local Distance = (rift.Position - Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                        RiftEsp.Text = name .. " (" .. math.floor(Distance) .. " studs)"
+                    end
+                else
+                    RiftEsp.Visible = false
+                end
+            elseif EspCache.Rifts[i] then
+                EspCache.Rifts[i].Visible = false
+            end
+        end
+    else
+        for _, RiftEsp in pairs(EspCache.Rifts) do
+            RiftEsp.Visible = false
         end
     end
 end)
 
 Players.PlayerRemoving:Connect(function(Player)
-    if EspCache[Player] then
-        for _, Esp in pairs(EspCache[Player]) do
-            Esp:Remove()
+    if EspCache.Players[Player] then
+        for _, Text in pairs(EspCache.Players[Player]) do
+            Text:Remove()
         end
-        EspCache[Player] = nil
+        EspCache.Players[Player] = nil
     end
 end)
 
@@ -680,9 +715,7 @@ workspace.NPCs:FindFirstChild("Magic Chalkman").Script.RemoteEvent:FireServer()
 workspace.NPCs:FindFirstChild("Thief King").RemoteEvent:FireServer()
 workspace.Hobo.RemoteEvent:FireServer()
 workspace.NPCs.Stray.Script.Manager:FireServer(1)
-Workspace.Mobs.OldFart["Old Fart"].HumanoidRootPart
-
--- workspace
+Workspace.Mobs.Old
 
 -- cframe
 
