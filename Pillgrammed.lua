@@ -207,11 +207,12 @@ do
     --// Auto Parry
     local Main_Auto_Parry = Tabs.Main:AddSection("Auto Parry") do
         Tabs.Main:AddToggle("main_auto_parry_toggle", {Title = "Auto Parry", Default = false })
+        Tabs.Main:AddToggle("main_auto_parry_ping_based", {Title = "Ping Based Delay", Description = "Automatically Set you're parry delay depending on you're ping.", Default = false })
         Tabs.Main:AddDropdown("main_auto_parry_method", {Title = "Perfect Block", Default = 1, Values = {"Retry", "Add"} })
         Tabs.Main:AddInput("main_auto_parry_radius", {Title = "Auto Parry Radius", Default = "5", Callback = function(v)
 			getgenv().AutoParryRadius = tonumber(v)
         end})
-        Tabs.Main:AddInput("main_auto_parry_delay", {Title = "Auto Parry Delay", Default = "0.0451012524", Callback = function(v)
+        Tabs.Main:AddInput("main_auto_parry_delay", {Title = "Auto Parry Delay", Default = "0.013518910", Callback = function(v)
 			getgenv().AutoParryDelay = tonumber(v)
         end})
     end
@@ -236,8 +237,10 @@ do
 		        Fluent:Notify({Title = "No Tool Found", Content = "No tool equipped. Please equip a tool first.", Duration = 3})
 		    end
 		end})
+		Tabs.Auto:AddParagraph({Title = "Auto Farm Notification", Content = "If the auto-farm feature fails to teleport to the mob, it indicates that the mob has not yet spawned. Please proceed to the mob’s spawn location to continue."})
 		Tabs.Auto:AddToggle("auto_farm_deposit_cash", {Title = "Auto Deposit Cash", Default = false })
         Tabs.Auto:AddToggle("auto_farm_cove_skeleton", {Title = "Auto Farm Cove Skeleton", Default = false })
+        Tabs.Auto:AddToggle("auto_farm_prism_troll", {Title = "Auto Farm Prism Troll", Default = false })
         Tabs.Auto:AddToggle("auto_farm_granny", {Title = "Auto Farm Granny", Default = false })
     end
 end
@@ -400,33 +403,57 @@ do
 end
 
 --// Main
+local AutoParrySet = {
+    [50] = 0.19131310128,
+    [100] = 0.015111210,
+    [150] = 0.0163132910,
+    [200] = 0.0171391010,
+    [300] = 0.0131513310,
+}
+
 local LastParryTime = 0
+
 RunService.RenderStepped:Connect(function()
     if Options["main_auto_parry_toggle"].Value then
-        -- Radius To Activate Block Remote: AutoParryRadiusObj
-        -- Block Remote Activate if there a "Workspace.Mobs" nearby
         local CurrentTime = tick()
-        if CurrentTime - LastParryTime >= (tonumber(AutoParryDelay) or 0.0451012524) then
-            if Options["main_auto_parry_method"].Value == "Retry" then
-                if not Character:FindFirstChild("PerfectBlock") then
+        if CurrentTime - LastParryTime >= (tonumber(AutoParryDelay) or 0.013518910) then
+            local AutoParryMethod = Options["main_auto_parry_method"].Value
+            local PerfectBlock = Character:FindFirstChild("PerfectBlock")
+            local Parrying = Character:FindFirstChild("Parrying")
+
+            if AutoParryMethod == "Retry" then
+                if not PerfectBlock then
                     ReplicatedStorage.Remotes.Block:FireServer(true)
                 end
-                if not Character:FindFirstChild("Parrying") then
-                    local Parrying = Instance.new("BoolValue", Character)
+                if not Parrying then
+                    Parrying = Instance.new("BoolValue", Character)
                     Parrying.Name = "Parrying"
                     Parrying.Value = true
                 end
-            elseif Options["main_auto_parry_method"].Value == "Add" then
+            elseif AutoParryMethod == "Add" then
                 ReplicatedStorage.Remotes.Block:FireServer(true)
-                if not Character:FindFirstChild("PerfectBlock") then
-                    local PerfectBlock = Instance.new("BoolValue", Character)
+                if not PerfectBlock then
+                    PerfectBlock = Instance.new("BoolValue", Character)
                     PerfectBlock.Name = "PerfectBlock"
                     PerfectBlock.Value = true
                 end
-                if not Character:FindFirstChild("Parrying") then
-                    local Parrying = Instance.new("BoolValue", Character)
+                if not Parrying then
+                    Parrying = Instance.new("BoolValue", Character)
                     Parrying.Name = "Parrying"
                     Parrying.Value = true
+                end
+            end
+
+            if Options["main_auto_parry_ping_based"].Value then
+                local PingValue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()
+                local Ping = tonumber(string.match(PingValue, "%d+"))
+                if Ping then
+                    for Threshold, Value in pairs(AutoParrySet) do
+                        if Ping <= Threshold then
+                            AutoParryDelay = Value
+                            break
+                        end
+                    end
                 end
             end
             LastParryTime = CurrentTime
@@ -516,6 +543,17 @@ RunService.RenderStepped:Connect(function()
             end
         end
     end
+    if Options["auto_farm_prism_troll"].Value then
+	    local PrismTroll = Mobs.PrismTroll:FindFirstChild("Prism Troll")
+	    if PrismTroll then
+        	ForceEquipTool(AutoFarmToolName)
+            AutoFarmObj.CFrame = PrismTroll.Head.CFrame + Vector3.new(0, 3.5, 0)
+            Character.HumanoidRootPart.CFrame = AutoFarmObj.CFrame + Vector3.new(0, 0.5, 0)
+            if Tool then
+                Tool:Activate()
+            end
+	    end
+    end
     if Options["auto_farm_granny"].Value then
         local GrannyRockHitbox = Mobs:FindFirstChild("Granny")
         if GrannyRockHitbox and GrannyRockHitbox.Granny then
@@ -547,11 +585,13 @@ RunService.RenderStepped:Connect(function()
                     EspCache[Player].NameText.Center = true
                     EspCache[Player].NameText.Outline = true
                     EspCache[Player].NameText.OutlineColor = Color3.fromRGB(0, 0, 0)
+                    EspCache[Player].NameText.Font = 2
                     EspCache[Player].HpText.Size = 18
                     EspCache[Player].HpText.Color = Color3.fromRGB(0, 255, 0)
                     EspCache[Player].HpText.Center = true
                     EspCache[Player].HpText.Outline = true
                     EspCache[Player].HpText.OutlineColor = Color3.fromRGB(0, 0, 0)
+                    EspCache[Player].HpText.Font = 2
                 end
                 local Esp = EspCache[Player]
                 local HeadPosition = Player.Character.Head.Position + Vector3.new(0, 2.5, 0)
