@@ -172,7 +172,7 @@ for Lever in pairs(Location.CatacombLevers) do
     table.insert(LeverListsDropdown, Lever)
 end
 for _, NPC in pairs(workspace.NPCs:GetChildren()) do
-    if NPC:FindFirstChild("HumanoidRootPart") and not (string.find(NPC.Name, "Sign") or string.find(NPC.Name, "Dock")) or string.find(NPC.Name, "Hobo")) then
+    if NPC:FindFirstChild("HumanoidRootPart") and not (string.find(NPC.Name, "Sign") or string.find(NPC.Name, "Dock") or string.find(NPC.Name, "Hobo")) then
         table.insert(NPCsListsDropdown, NPC.Name)
     end
 end
@@ -585,13 +585,13 @@ RunService.RenderStepped:Connect(function()
                     EspCache[Player].NameText.Center = true
                     EspCache[Player].NameText.Outline = true
                     EspCache[Player].NameText.OutlineColor = Color3.fromRGB(0, 0, 0)
-                    EspCache[Player].NameText.Font = 2
+                    EspCache[Player].NameText.Font = 3
                     EspCache[Player].HpText.Size = 18
                     EspCache[Player].HpText.Color = Color3.fromRGB(0, 255, 0)
                     EspCache[Player].HpText.Center = true
                     EspCache[Player].HpText.Outline = true
                     EspCache[Player].HpText.OutlineColor = Color3.fromRGB(0, 0, 0)
-                    EspCache[Player].HpText.Font = 2
+                    EspCache[Player].HpText.Font = 3
                 end
                 local Esp = EspCache[Player]
                 local HeadPosition = Player.Character.Head.Position + Vector3.new(0, 2.5, 0)
