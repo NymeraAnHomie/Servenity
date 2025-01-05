@@ -85,10 +85,17 @@ local function ServerHop()
             end
         end
         
-        if ServerMode == "Ping" then
+        if ServerMode == "Best Ping" then
             for _, Server in ipairs(ServersList) do
                 local Ping = ServerhopGetPing(Server.id)
                 if Ping < BestPing then
+                    BestPing, BestServer = Ping, Server
+                end
+            end
+        elseif ServerMode == "Worst Ping" then
+            for _, Server in ipairs(ServersList) do
+                local Ping = ServerhopGetPing(Server.id)
+                if Ping > BestPing then
                     BestPing, BestServer = Ping, Server
                 end
             end
@@ -140,7 +147,8 @@ local Location = {
 		["Purple Shark Arena"] = CFrame.new(-2008.019653, -695.037781, -536.772400, -0.721517, 0.000000, 0.692396, 0.000000, 1.000000, 0.000000, -0.692396, 0.000000, -0.721517),
 		["Big Iron"] = CFrame.new(2328.838623, -17.500006, -3243.009277, 0.999465, -0.000000, -0.032718, 0.000000, 1.000000, -0.000000, 0.032718, 0.000000, 0.999465),
 		["Unfair Fight"] = CFrame.new(4470.296875, -329.125580, -2199.090576, 0.006444, -0.000000, 0.999979, 0.000000, 1.000000, 0.000000, -0.999979, 0.000000, 0.006444),
-		["Patris Island"] = CFrame.new(-3117.919678, -21.224762, -4241.643066, 0.973629, -0.000000, -0.228137, 0.000000, 1.000000, 0.000000, 0.228137, -0.000000, 0.973629)
+		["Patris Island"] = CFrame.new(-3117.919678, -21.224762, -4241.643066, 0.973629, -0.000000, -0.228137, 0.000000, 1.000000, 0.000000, 0.228137, -0.000000, 0.973629),
+		["Ceremonial Greatblade"] = CFrame.new(20727.357422, -1406.500366, -349.841766, -0.364550, -0.000000, -0.931184, 0.000000, 1.000000, -0.000000, 0.931184, -0.000000, -0.364550)
     },
 	CatacombLevers = {
 		["Lever 1"] = CFrame.new(5205.883789, -279.500092, 481.946106, -0.761892, 0.000000, 0.647704, 0.000000, 1.000000, -0.000000, -0.647704, 0.000000, -0.761892),
@@ -152,6 +160,21 @@ local Location = {
 		["Seed 1"] = CFrame.new(4979.690430, -343.090027, 611.070740, 0.999845, -0.000000, -0.017632, 0.000000, 1.000000, 0.000000, 0.017632, -0.000000, 0.999845),
 		["Seed 2"] = CFrame.new(5121.161621, -343.500092, 537.244568, -0.764907, 0.000000, -0.644141, -0.000000, 1.000000, 0.000000, 0.644141, 0.000000, -0.764907)	
 	}
+}
+local Ores = {
+    "Diamond",
+    "Emerald",
+    "Ruby",
+    "Sapphire",
+    "Mithril",
+    "Silver",
+    "Gold",
+    "Iron",
+    "Zinc",
+    "Copper",
+    "Tin",
+    "Sulfur",
+    "Demetal"
 }
 local Original = {
 	FogEnd = Lighting.FogEnd,
@@ -227,7 +250,7 @@ end
 --// Automatically
 do
      --// Auto Farm
-    local Auto_Farm = Tabs.Auto:AddSection("Auto Farm") do
+    local Auto_Farm = Tabs.Auto:AddSection("Bosses") do
         Tabs.Auto:AddButton({Title = "Select Tool", Description = "Sets the selected tool to the one currently held by the player.", Callback = function()
 		    local HeldTool = Character:FindFirstChildOfClass("Tool")
 		    if HeldTool then
@@ -242,6 +265,12 @@ do
         Tabs.Auto:AddToggle("auto_farm_cove_skeleton", {Title = "Auto Farm Cove Skeleton", Default = false })
         Tabs.Auto:AddToggle("auto_farm_prism_troll", {Title = "Auto Farm Prism Troll", Default = false })
         Tabs.Auto:AddToggle("auto_farm_granny", {Title = "Auto Farm Granny", Default = false })
+    end
+    
+    --// Auto Farm Ore
+    local Auto_Farm = Tabs.Auto:AddSection("Mining (in developing)") do
+        Tabs.Auto:AddToggle("auto_farm_ore", {Title = "Start Auto Mining", Default = false })
+        Tabs.Teleport:AddDropdown("auto_farm_ore_dropdown", {Title = "Choose Ores", Default = 1, Values = Ores })
     end
 end
 
@@ -384,7 +413,7 @@ do
 	end
 	
 	local Settings_Serverhop = Tabs.Settings:AddSection("Serverhop") do
-	    Tabs.Settings:AddDropdown("settings_serverhop_mode", {Title = "Server Mode", Default = 1, Values = {"Lowest", "Highest", "Ping"}, Callback = function(v)
+	    Tabs.Settings:AddDropdown("settings_serverhop_mode", {Title = "Server Mode", Default = 1, Values = {"Lowest", "Highest", "Worst Ping", "Best Ping"}, Callback = function(v)
             getgenv().ServerHopMode = v
         end})
 	    Tabs.Settings:AddButton({Title = "Join Server", Callback = function()
@@ -408,7 +437,7 @@ end
 local AutoParrySet = {
     [50] = 0.01891210,
     [100] = 0.0161310,
-    [150] = 0.014815,
+    [150] = 0.0218910,
     [250] = 0.0125,
     [200] = 0.012,
     [300] = 0.013,
