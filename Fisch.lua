@@ -88,10 +88,17 @@ local function ServerHop()
             end
         end
         
-        if ServerMode == "Ping" then
+        if ServerMode == "Best Ping" then
             for _, Server in ipairs(ServersList) do
                 local Ping = ServerhopGetPing(Server.id)
                 if Ping < BestPing then
+                    BestPing, BestServer = Ping, Server
+                end
+            end
+        elseif ServerMode == "Worst Ping" then
+            for _, Server in ipairs(ServersList) do
+                local Ping = ServerhopGetPing(Server.id)
+                if Ping > BestPing then
                     BestPing, BestServer = Ping, Server
                 end
             end
@@ -476,7 +483,7 @@ do
 	end
 	
 	local Settings_Serverhop = Tabs.Settings:AddSection("Serverhop") do
-	    Tabs.Settings:AddDropdown("settings_serverhop_mode", {Title = "Server Mode", Default = 1, Values = {"Lowest", "Highest", "Ping"}, Callback = function(v)
+	    Tabs.Settings:AddDropdown("settings_serverhop_mode", {Title = "Server Mode", Default = 1, Values = {"Lowest", "Highest", "Worst Ping", "Best Ping"}, Callback = function(v)
             getgenv().ServerHopMode = v
         end})
 	    Tabs.Settings:AddButton({Title = "Join Server", Callback = function()
@@ -649,7 +656,7 @@ end)
 RunService.RenderStepped:Connect(function()
     local CurrentTime = tick()
     local AutoEventZoneYValue = 12.5
-    local AutoFarmObjYValue = 0
+    local AutoFarmObjYValue = 4
     
     --// Auto Megalodon
     if Options["auto_fish_megalodon"].Value and Character then
