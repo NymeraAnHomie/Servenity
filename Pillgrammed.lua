@@ -270,7 +270,7 @@ do
     --// Auto Farm Ore
     local Auto_Farm = Tabs.Auto:AddSection("Mining (in developing)") do
         Tabs.Auto:AddToggle("auto_farm_ore", {Title = "Start Auto Mining", Default = false })
-        Tabs.Teleport:AddDropdown("auto_farm_ore_dropdown", {Title = "Choose Ores", Default = 1, Values = Ores })
+        Tabs.Auto:AddDropdown("auto_farm_ore_dropdown", {Title = "Choose Ores", Default = 1, Values = Ores })
     end
 end
 
