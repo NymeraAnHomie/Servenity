@@ -1,3 +1,28 @@
+--// Window
+local Window = Fluent:CreateWindow({
+    Title = "Servenity",
+    SubTitle = "V2 Private",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(610, 385),
+    Acrylic = true,
+    Theme = "Darker",
+    MinimizeKey = Enum.KeyCode.Insert
+})
+
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main", Icon = "rbxassetid://10734886202" }),
+    Dupe = Window:AddTab({ Title = "Dupe", Icon = "rbxassetid://10709798574" }),
+    Auto = Window:AddTab({ Title = "Auto", Icon = "rbxassetid://10734923549" }),
+    Webhook = Window:AddTab({ Title = "Webhook", Icon = "rbxassetid://10734950813" }),
+    Inventory = Window:AddTab({ Title = "Inventory", Icon = "rbxassetid://10709769841" }),
+    Shop = Window:AddTab({ Title = "Shop", Icon = "rbxassetid://10734952479" }),
+    Teleport = Window:AddTab({ Title = "Teleport", Icon = "rbxassetid://10734922971" }),
+    Miscellaneous = Window:AddTab({ Title = "Miscellaneous", Icon = "rbxassetid://10747373176" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "rbxassetid://10734950309" })
+}
+
+getgenv().Options = Fluent.Options
+
 local Passed, Statement = pcall(function() --// Main Cheat
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	local Workspace = game:GetService("Workspace")
@@ -235,30 +260,6 @@ local Passed, Statement = pcall(function() --// Main Cheat
 		table.insert(AutoBuyItems, AutoBuyItem)
 	end
 	
-	--// Window
-	local Window = Fluent:CreateWindow({
-	    Title = "Servenity",
-	    SubTitle = "V2 Private",
-	    TabWidth = 160,
-	    Size = UDim2.fromOffset(610, 385),
-	    Acrylic = true,
-	    Theme = "Darker",
-	    MinimizeKey = Enum.KeyCode.Insert
-	})
-	
-	local Tabs = {
-	    Main = Window:AddTab({ Title = "Main", Icon = "rbxassetid://10734886202" }),
-	    Dupe = Window:AddTab({ Title = "Dupe", Icon = "rbxassetid://10709798574" }),
-	    Auto = Window:AddTab({ Title = "Auto", Icon = "rbxassetid://10734923549" }),
-	    Webhook = Window:AddTab({ Title = "Webhook", Icon = "rbxassetid://10734950813" }),
-	    Inventory = Window:AddTab({ Title = "Inventory", Icon = "rbxassetid://10709769841" }),
-	    Shop = Window:AddTab({ Title = "Shop", Icon = "rbxassetid://10734952479" }),
-	    Teleport = Window:AddTab({ Title = "Teleport", Icon = "rbxassetid://10734922971" }),
-	    Miscellaneous = Window:AddTab({ Title = "Miscellaneous", Icon = "rbxassetid://10747373176" }),
-	    Settings = Window:AddTab({ Title = "Settings", Icon = "rbxassetid://10734950309" })
-	}
-	
-	getgenv().Options = Fluent.Options
 	getgenv().SavedPosition_CFrame = CFrame.new(0, 0, 0)
 	if not isfile("Servenity/SavedPos.cf") then
 	    writefile("Servenity/SavedPos.cf", tostring(SavedPosition_CFrame))
