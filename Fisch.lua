@@ -1,3 +1,8 @@
+local function LPH_NO_VIRTUALIZE(code)
+    return code
+end
+local LPH_JIT_MAX = LPH_NO_VIRTUALIZE
+
 --// Window
 local Window = Fluent:CreateWindow({
     Title = "Servenity",
@@ -23,7 +28,7 @@ local Tabs = {
 
 getgenv().Options = Fluent.Options
 
-local Passed, Statement = pcall(function() --// Main Cheat
+LPH_JIT_MAX(function() --// Main Cheat
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	local Workspace = game:GetService("Workspace")
 	local Lighting = game:GetService("Lighting")
