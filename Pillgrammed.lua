@@ -26,7 +26,7 @@ local Tabs = {
 
 getgenv().Options = Fluent.Options
 
-LPH_NO_VIRTUALIZE(function() --// Main Cheat
+LPH_JIT_MAX(function() --// Main Cheat
 	local UserInputService = game:GetService("UserInputService")
 	local ReplicatedStorage = game:GetService("ReplicatedStorage")
 	local Players = game:GetService("Players")
