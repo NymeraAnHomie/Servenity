@@ -177,7 +177,8 @@ local Location = {
 		["Big Iron"] = CFrame.new(2328.838623, -17.500006, -3243.009277, 0.999465, -0.000000, -0.032718, 0.000000, 1.000000, -0.000000, 0.032718, 0.000000, 0.999465),
 		["Unfair Fight"] = CFrame.new(4470.296875, -329.125580, -2199.090576, 0.006444, -0.000000, 0.999979, 0.000000, 1.000000, 0.000000, -0.999979, 0.000000, 0.006444),
 		["Patris Island"] = CFrame.new(-3117.919678, -21.224762, -4241.643066, 0.973629, -0.000000, -0.228137, 0.000000, 1.000000, 0.000000, 0.228137, -0.000000, 0.973629),
-		["Ceremonial Greatblade"] = CFrame.new(20727.357422, -1406.500366, -349.841766, -0.364550, -0.000000, -0.931184, 0.000000, 1.000000, -0.000000, 0.931184, -0.000000, -0.364550)
+		["Ceremonial Greatblade"] = CFrame.new(20727.357422, -1406.500366, -349.841766, -0.364550, -0.000000, -0.931184, 0.000000, 1.000000, -0.000000, 0.931184, -0.000000, -0.364550),
+		["Psychocrab"] = CFrame.new(-1862.924438, -374.765137, -1576.290527, -0.077071, 0.000000, -0.997026, 0.000000, 1.000000, 0.000000, 0.997026, 0.000000, -0.077071)
     },
 	CatacombLevers = {
 		["Lever 1"] = CFrame.new(5205.883789, -279.500092, 481.946106, -0.761892, 0.000000, 0.647704, 0.000000, 1.000000, -0.000000, -0.647704, 0.000000, -0.761892),
@@ -187,23 +188,24 @@ local Location = {
 	},
 	Cataseeds = {
 		["Seed 1"] = CFrame.new(4979.690430, -343.090027, 611.070740, 0.999845, -0.000000, -0.017632, 0.000000, 1.000000, 0.000000, 0.017632, -0.000000, 0.999845),
-		["Seed 2"] = CFrame.new(5121.161621, -343.500092, 537.244568, -0.764907, 0.000000, -0.644141, -0.000000, 1.000000, 0.000000, 0.644141, 0.000000, -0.764907)	
+		["Seed 2"] = CFrame.new(5121.161621, -343.500092, 537.244568, -0.764907, 0.000000, -0.644141, -0.000000, 1.000000, 0.000000, 0.644141, 0.000000, -0.764907),
+		["Seed 3"] = CFrame.new(5122.408203, -261.500092, 764.158875, -0.974852, -0.000000, 0.222852, 0.000000, 1.000000, 0.000000, -0.222852, 0.000000, -0.974852)
 	}
 }
 local Ores = {
-    "Diamond",
-    "Emerald",
-    "Ruby",
-    "Sapphire",
-    "Mithril",
-    "Silver",
-    "Gold",
-    "Iron",
-    "Zinc",
-    "Copper",
-    "Tin",
-    "Sulfur",
-    "Demetal"
+    Diamond = Color3.fromRGB(185, 242, 255),
+    Emerald = Color3.fromRGB(80, 200, 120),
+    Ruby = Color3.fromRGB(224, 17, 95),
+    Sapphire = Color3.fromRGB(15, 82, 186),
+    Mithril = Color3.fromRGB(158, 195, 255),
+    Silver = Color3.fromRGB(192, 192, 192),
+    Gold = Color3.fromRGB(255, 215, 0),
+    Iron = Color3.fromRGB(183, 65, 14),
+    Zinc = Color3.fromRGB(150, 150, 150),
+    Copper = Color3.fromRGB(184, 115, 51),
+    Tin = Color3.fromRGB(222, 227, 227),
+    Sulfur = Color3.fromRGB(253, 222, 54),
+    Demetal = Color3.fromRGB(139, 0, 60)
 }
 local Original = {
 	FogEnd = Lighting.FogEnd,
@@ -216,6 +218,7 @@ local IslandListsDropdown = {}
 local LeverListsDropdown = {}
 local NPCsListsDropdown = {}
 local CataseedsListsDropdown = {}
+local OresListDropdown = {}
 
 for island in pairs(Location.Islands) do
     table.insert(IslandListsDropdown, island)
@@ -224,12 +227,15 @@ for Lever in pairs(Location.CatacombLevers) do
     table.insert(LeverListsDropdown, Lever)
 end
 for _, NPC in pairs(workspace.NPCs:GetChildren()) do
-    if NPC:FindFirstChild("HumanoidRootPart") and not (string.find(NPC.Name, "Sign") or string.find(NPC.Name, "Dock") or string.find(NPC.Name, "Hobo")) then
+    if NPC:FindFirstChild("HumanoidRootPart") and not (string.find(NPC.Name, "Sign") or string.find(NPC.Name, "Dock") or string.find(NPC.Name, "Hobo") or string.find(NPC.Name, "Mela")) then
         table.insert(NPCsListsDropdown, NPC.Name)
     end
 end
 for Cataseeds in pairs(Location.Cataseeds) do
     table.insert(CataseedsListsDropdown, Cataseeds)
+end
+for Oresname in pairs(Ores) do
+    table.insert(OresListDropdown, Oresname)
 end
 
 --// Main
@@ -277,7 +283,7 @@ do
     --// Auto Farm Ore
     local Auto_Farm = Tabs.Auto:AddSection("Mining (in developing)") do
         Tabs.Auto:AddToggle("auto_farm_ore", {Title = "Start Auto Mining", Default = false })
-        Tabs.Auto:AddDropdown("auto_farm_ore_dropdown", {Title = "Choose Ores", Default = 1, Values = Ores })
+        Tabs.Auto:AddDropdown("auto_farm_ore_dropdown", {Title = "Choose Ores", Default = 1, Values = OresListDropdown })
     end
 end
 
@@ -355,6 +361,14 @@ do
 			    Character.HumanoidRootPart.CFrame = HoboDude.HumanoidRootPart.CFrame
 			else
 			    Fluent:Notify({Title = "Notification", Content = "Hobo has not yet spawned.", Duration = 5})
+			end
+		end})
+		Tabs.Teleport:AddButton({Title = "Teleport to Mela", Callback = function()
+		    local MelaDude = Workspace.NPCs:FindFirstChild("Mela")
+			if MelaDude then
+			    Character.HumanoidRootPart.CFrame = MelaDude.HumanoidRootPart.CFrame
+			else
+			    Fluent:Notify({Title = "Notification", Content = "Mela has not yet spawned.", Duration = 5})
 			end
 		end})
     end
