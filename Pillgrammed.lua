@@ -134,6 +134,12 @@ local function UnEquipTool(toolName)
         end
     end
 end
+function CastRod(x, y, z, bait)
+    local Tool = Character:FindFirstChildOfClass("Tool")
+    if Tool and (Tool.Name == "Fishing Rod" or Tool.Name == "Advance Rod") then
+        Tool.Event:FireServer(Workspace.Map.SeaBox.Water, Vector3.new(x, y, z), bait)
+    end
+end
 
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
@@ -189,23 +195,25 @@ local Location = {
 	Cataseeds = {
 		["Seed 1"] = CFrame.new(4979.690430, -343.090027, 611.070740, 0.999845, -0.000000, -0.017632, 0.000000, 1.000000, 0.000000, 0.017632, -0.000000, 0.999845),
 		["Seed 2"] = CFrame.new(5121.161621, -343.500092, 537.244568, -0.764907, 0.000000, -0.644141, -0.000000, 1.000000, 0.000000, 0.644141, 0.000000, -0.764907),
-		["Seed 3"] = CFrame.new(5122.408203, -261.500092, 764.158875, -0.974852, -0.000000, 0.222852, 0.000000, 1.000000, 0.000000, -0.222852, 0.000000, -0.974852)
+		["Seed 3"] = CFrame.new(5122.408203, -261.500092, 764.158875, -0.974852, -0.000000, 0.222852, 0.000000, 1.000000, 0.000000, -0.222852, 0.000000, -0.974852),
+		["Seed 4"] = CFrame.new(5063.382812, -279.500092, 298.873962, 0.350624, 0.000000, -0.936516, 0.000000, 1.000000, 0.000000, 0.936516, -0.000000, 0.350624),
+		["Seed 5"] = CFrame.new(4796.077148, -330.500092, -193.093597, -0.761918, 0.000000, -0.647673, 0.000000, 1.000000, 0.000000, 0.647673, 0.000000, -0.761918)
 	}
 }
 local Ores = {
-    Diamond = Color3.fromRGB(185, 242, 255),
-    Emerald = Color3.fromRGB(80, 200, 120),
-    Ruby = Color3.fromRGB(224, 17, 95),
-    Sapphire = Color3.fromRGB(15, 82, 186),
-    Mithril = Color3.fromRGB(158, 195, 255),
-    Silver = Color3.fromRGB(192, 192, 192),
-    Gold = Color3.fromRGB(255, 215, 0),
-    Iron = Color3.fromRGB(183, 65, 14),
-    Zinc = Color3.fromRGB(150, 150, 150),
-    Copper = Color3.fromRGB(184, 115, 51),
-    Tin = Color3.fromRGB(222, 227, 227),
-    Sulfur = Color3.fromRGB(253, 222, 54),
-    Demetal = Color3.fromRGB(139, 0, 60)
+    "Diamond",
+    "Emerald",
+    "Ruby",
+    "Sapphire",
+    "Mithril",
+    "Silver",
+    "Gold",
+    "Iron",
+    "Zinc",
+    "Copper",
+    "Tin",
+    "Sulfur",
+    "Demetal"
 }
 local Original = {
 	FogEnd = Lighting.FogEnd,
@@ -218,7 +226,6 @@ local IslandListsDropdown = {}
 local LeverListsDropdown = {}
 local NPCsListsDropdown = {}
 local CataseedsListsDropdown = {}
-local OresListDropdown = {}
 
 for island in pairs(Location.Islands) do
     table.insert(IslandListsDropdown, island)
@@ -233,9 +240,6 @@ for _, NPC in pairs(workspace.NPCs:GetChildren()) do
 end
 for Cataseeds in pairs(Location.Cataseeds) do
     table.insert(CataseedsListsDropdown, Cataseeds)
-end
-for Oresname in pairs(Ores) do
-    table.insert(OresListDropdown, Oresname)
 end
 
 --// Main
@@ -283,19 +287,23 @@ do
     --// Auto Farm Ore
     local Auto_Farm = Tabs.Auto:AddSection("Mining (in developing)") do
         Tabs.Auto:AddToggle("auto_farm_ore", {Title = "Start Auto Mining", Default = false })
-        Tabs.Auto:AddDropdown("auto_farm_ore_dropdown", {Title = "Choose Ores", Default = 1, Values = OresListDropdown })
+        Tabs.Auto:AddDropdown("auto_farm_ore_dropdown", {Title = "Choose Ores", Default = 1, Values = Ores })
     end
 end
 
 --// Render
 do
      --// Players
-    local Render_ESP = Tabs.Render:AddSection("Visuals") do
+    local Render_ESP_Players = Tabs.Render:AddSection("Players") do
         Tabs.Render:AddToggle("render_esp_players", {Title = "ESP Players", Default = false })
-        Tabs.Render:AddToggle("render_esp_players_distance", {Title = "Players Distance", Default = false })
+        Tabs.Render:AddToggle("render_esp_players_distance", {Title = "Visualize Distance", Default = false })
+    end
+    
+    --// Rifts
+    local Render_ESP_Riftss = Tabs.Render:AddSection("Rifts") do
         Tabs.Render:AddToggle("render_esp_rifts", {Title = "ESP Rifts", Default = false })
-        Tabs.Render:AddToggle("render_esp_rifts_distance", {Title = "Rifts Distance", Default = false })
-        Tabs.Render:AddToggle("render_esp_mobs", {Title = "ESP Mobs", Default = false })
+        Tabs.Render:AddToggle("render_esp_rifts_faux_wax", {Title = "Visualize Faux Wax", Default = false })
+        Tabs.Render:AddToggle("render_esp_rifts_distance", {Title = "Visualize Distance", Default = false })
     end
 end
 
@@ -481,12 +489,12 @@ end
 --// Main
 local LastParryTime = 0
 local AutoParrySet = {
-    [50] = 0.01891210,
-    [100] = 0.0161310,
-    [150] = 0.0218910,
-    [250] = 0.012,
-    [200] = 0.01322812132125,
-    [300] = 0.012812,
+    [50] = 0.018912,
+    [100] = 0.016131,
+    [150] = 0.021891,
+    [200] = 0.013271,
+    [250] = 0.012721,
+    [300] = 0.01112,
 }
 
 RunService.RenderStepped:Connect(function()
@@ -595,49 +603,56 @@ end)
 RunService.RenderStepped:Connect(function()
     local Tool = Character:FindFirstChildOfClass("Tool")
     local Mobs = Workspace:FindFirstChild("Mobs")
-    if Options["auto_farm_deposit_cash"].Value then
-	    ReplicatedStorage.Remotes.Bank:InvokeServer(true, 1)
-    end
-    if Options["auto_farm_cove_skeleton"].Value then
-        local Skeleton = Mobs:FindFirstChild("The Skeleton")
-        if Skeleton and Skeleton:FindFirstChild("Head") then
-            local CoveSkeletonCFrame = Skeleton.Head.CFrame
-            UnEquipTool("Tainted Flower")
-            ForceEquipTool(AutoFarmToolName)
-            AutoFarmObj.CFrame = CoveSkeletonCFrame + Vector3.new(0, -5.5, 0)
-            Character.HumanoidRootPart.CFrame = AutoFarmObj.CFrame + Vector3.new(0, 3.5, 0)
-            if Tool then
-                Tool:Activate()
-            end
-        else
-            ForceEquipTool("Tainted Flower")
-            Character.HumanoidRootPart.CFrame = Workspace.Map.BlackenedIsland.Altar.Water.CFrame + Vector3.new(0, 5.5, 0)
-            if Tool then
-                Tool:Activate()
+
+    if Options["auto_farm_ore"].Value then
+        local selectedOreName = Options["auto_farm_ore_dropdown"].Value
+        for _, item in pairs(Workspace:GetChildren()) do
+            if item:IsA("Model") and item.Name == selectedOreName and item:FindFirstChild("OrePart") then
+                ForceEquipTool(AutoFarmToolName)
+                AutoFarmObj.CFrame = item.OrePart.CFrame + Vector3.new(0, 3, 0)
+                Character.HumanoidRootPart.CFrame = AutoFarmObj.CFrame + Vector3.new(0, 2, 0)
+                if Tool then
+                    Tool:Activate()
+                end
+                break
             end
         end
     end
-    if Options["auto_farm_prism_troll"].Value then
-	    local PrismTroll = Mobs.PrismTroll:FindFirstChild("Prism Troll")
-	    if PrismTroll then
-        	ForceEquipTool(AutoFarmToolName)
-            AutoFarmObj.CFrame = PrismTroll.Head.CFrame + Vector3.new(0, 3.5, 0)
-            Character.HumanoidRootPart.CFrame = AutoFarmObj.CFrame + Vector3.new(0, 0.5, 0)
-            if Tool then
-                Tool:Activate()
-            end
-	    end
+
+    if Options["auto_farm_deposit_cash"].Value then
+        ReplicatedStorage.Remotes.Bank:InvokeServer(true, 1)
     end
-    if Options["auto_farm_granny"].Value then
-        local GrannyRockHitbox = Mobs:FindFirstChild("Granny")
-        if GrannyRockHitbox and GrannyRockHitbox.Granny then
-            local GrannyHitboxCFrame = GrannyRockHitbox.Granny.CFrame
+
+    if Options["auto_farm_cove_skeleton"].Value then
+        local Skeleton = Mobs and Mobs:FindFirstChild("The Skeleton")
+        if Skeleton and Skeleton:FindFirstChild("Head") then
+            UnEquipTool("Tainted Flower")
             ForceEquipTool(AutoFarmToolName)
-            AutoFarmObj.CFrame = GrannyHitboxCFrame + Vector3.new(0, -4.5, 0)
-            Character.HumanoidRootPart.CFrame = AutoFarmObj.CFrame + Vector3.new(0, 3, 0)
-            if Tool then
-                Tool:Activate()
-            end
+            Character.HumanoidRootPart.CFrame = Skeleton.Head.CFrame + Vector3.new(0, -2, 0)
+            if Tool then Tool:Activate() end
+        else
+            Character.HumanoidRootPart.CFrame = Workspace.Map.BlackenedIsland.Altar.Water.CFrame + Vector3.new(0, 5.5, 0)
+            ForceEquipTool("Tainted Flower")
+            UnEquipTool(AutoFarmToolName)
+            if Tool then Tool:Activate() end
+        end
+    end
+
+    if Options["auto_farm_prism_troll"].Value then
+        local PrismTroll = Mobs and Mobs:FindFirstChild("Prism Troll")
+        if PrismTroll and PrismTroll:FindFirstChild("Head") then
+            ForceEquipTool(AutoFarmToolName)
+            Character.HumanoidRootPart.CFrame = PrismTroll.Head.CFrame + Vector3.new(0, 0.5, 0)
+            if Tool then Tool:Activate() end
+        end
+    end
+
+    if Options["auto_farm_granny"].Value then
+        local Granny = Mobs and Mobs:FindFirstChild("Granny")
+        if Granny and Granny:FindFirstChild("Granny") then
+            ForceEquipTool(AutoFarmToolName)
+            Character.HumanoidRootPart.CFrame = Granny.Granny.CFrame + Vector3.new(0, 3, 0)
+            if Tool then Tool:Activate() end
         end
     end
 end)
@@ -645,7 +660,8 @@ end)
 --// ESP
 local EspCache = {
     Players = {},
-    Rifts = {}
+    Rifts = {},
+    Mobs = {}
 }
 local RiftsLocation = {
     [1] = "Deep Desert",
@@ -658,7 +674,6 @@ local RiftsLocation = {
 }
 
 RunService.RenderStepped:Connect(function()
-    -- Player ESP
     if Options["render_esp_players"].Value then
         for _, Player in ipairs(Players:GetPlayers()) do
             if Player ~= Players.LocalPlayer and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character:FindFirstChild("Head") then
@@ -699,7 +714,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Rift ESP
     if Options["render_esp_rifts"].Value then
         for i, name in pairs(RiftsLocation) do
             local rift = Workspace:FindFirstChild("RiftSpawn" .. i)
@@ -729,10 +743,6 @@ RunService.RenderStepped:Connect(function()
         for _, RiftEsp in pairs(EspCache.Rifts) do
             RiftEsp.Visible = false
         end
-    end
-    
-    if Options["render_esp_mobs"].Value then
-    
     end
 end)
 
