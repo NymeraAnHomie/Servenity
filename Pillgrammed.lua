@@ -254,7 +254,7 @@ do
         end})
     end
     
-    local Main_Auto_Parry = Tabs.Main:AddSection("Auto Parry") do
+    local Main_Auto_Dodge = Tabs.Main:AddSection("Auto Dodge") do
         Tabs.Main:AddToggle("main_auto_dodge_toggle", {Title = "Auto Dodge", Default = false })
         Tabs.Main:AddDropdown("main_auto_dodge_mode", {Title = "Auto Dodge Mode", Description = "Honestly idk how to make legit mode", Default = 1, Values = {"Blatant", "Legit"} })
     end
