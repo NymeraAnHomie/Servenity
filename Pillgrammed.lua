@@ -249,12 +249,14 @@ do
         Tabs.Main:AddToggle("main_auto_parry_toggle", {Title = "Auto Parry", Default = false })
         Tabs.Main:AddToggle("main_auto_parry_ping_based", {Title = "Ping Based Delay", Description = "Automatically Set you're parry delay depending on you're ping.", Default = false })
         Tabs.Main:AddDropdown("main_auto_parry_method", {Title = "Perfect Block", Default = 1, Values = {"Retry", "Add"} })
-        Tabs.Main:AddInput("main_auto_parry_radius", {Title = "Auto Parry Radius", Default = "5", Callback = function(v)
-			getgenv().AutoParryRadius = tonumber(v)
-        end})
         Tabs.Main:AddInput("main_auto_parry_delay", {Title = "Auto Parry Delay", Default = "0.013518910", Callback = function(v)
 			getgenv().AutoParryDelay = tonumber(v)
         end})
+    end
+    
+    local Main_Auto_Parry = Tabs.Main:AddSection("Auto Parry") do
+        Tabs.Main:AddToggle("main_auto_dodge_toggle", {Title = "Auto Dodge", Default = false })
+        Tabs.Main:AddDropdown("main_auto_dodge_mode", {Title = "Auto Dodge Mode", Description = "Honestly idk how to make legit mode", Default = 1, Values = {"Blatant", "Legit"} })
     end
     
     --// Auto Slash
@@ -543,6 +545,14 @@ RunService.RenderStepped:Connect(function()
         ReplicatedStorage.Remotes.Block:FireServer(false)
     end
 
+    if Options["main_auto_dodge_toggle"].Value then
+        if Options["main_auto_dodge_mode"].Value == "Blatant" then
+            ReplicatedStorage.Remotes.Roll:FireServer()
+        elseif Options["main_auto_dodge_mode"].Value == "Legit" then
+            -- got no fucking idea how to make dis
+        end
+    end
+
     if Options["modifications_walkspeed_enabled"].Value then
         local v1ws, v2ws = LocalPlayer.Character.HumanoidRootPart, LocalPlayer.Character.Humanoid
         v1ws.CFrame = v1ws.CFrame + v2ws.MoveDirection * WalkspeedCFrameAmount
@@ -780,5 +790,5 @@ workspace.Hobo.RemoteEvent:FireServer()
 workspace.NPCs.Stray.Script.Manager:FireServer(1)
 
 -- cframe
-
+game:GetService("Workspace").Map.NBarrier
 ]]
