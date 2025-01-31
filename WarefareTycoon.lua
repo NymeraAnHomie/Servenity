@@ -230,64 +230,71 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+local last_tick_hook = tick()
 RunService.RenderStepped:Connect(function()
-    local CombatHookInfAmmo = OrionLib.Flags["combat_hook_inf_ammo"].Value
-    local CombatHookBulletMultiplier = OrionLib.Flags["combat_hook_bullet_multiplier"].Value
-    local CombatHookMagicBullet = OrionLib.Flags["combat_hook_magic_bullet"].Value
-    local AlwaysAirKill = OrionLib.Flags["combat_hooks_airkill"].Value
-    local AlwaysNoscopeKill = OrionLib.Flags["combat_hooks_no_scope"].Value
+    local hook_tick = tick()
     
-    if AlwaysAirKill then
-        ReplicatedStorage.ACS_Engine.Events.EditKillConditions:FireServer("InAir", true)
-    end
-    if AlwaysNoscopeKill then
-        ReplicatedStorage.ACS_Engine.Events.EditKillConditions:FireServer("Aiming", false)
-    end
-    
-    local PlayerWeapon = workspace[LocalPlayer.Name].ACS_Client.ACS_Framework
-    local ReloadFunction = Hydroxide.searchClosure(PlayerWeapon, "Reload", 1, {
-        [1] = "Type", [2] = "Gun", [3] = "Stinger", [4] = "Launcher", [5] = "Grapple Hook", [6] = "Ammo"
-    })
-    local AdsFunction = Hydroxide.searchClosure(PlayerWeapon, "ADS", 3, {
-        [1] = "IsAimingDownSights", [2] = "IsTurret", [3] = "setInProgress", [4] = "ADS", [5] = "canAim", [6] = 0.2
-    })
-    
-    if ReloadFunction then
-        local AmmoData = debug.getupvalue(ReloadFunction, 1)
-        if AmmoData then
-            if CombatHookInfAmmo then
-                AmmoData["Ammo"] = 99998
-            else
-                AmmoData["Ammo"] = 20
-            end
+    if hook_tick - last_tick_hook >= 4 then
+        lastExecuted = currentTime
+        
+        local CombatHookInfAmmo = OrionLib.Flags["combat_hook_inf_ammo"].Value
+        local CombatHookBulletMultiplier = OrionLib.Flags["combat_hook_bullet_multiplier"].Value
+        local CombatHookMagicBullet = OrionLib.Flags["combat_hook_magic_bullet"].Value
+        local AlwaysAirKill = OrionLib.Flags["combat_hooks_airkill"].Value
+        local AlwaysNoscopeKill = OrionLib.Flags["combat_hooks_no_scope"].Value
+        
+        if AlwaysAirKill then
+            ReplicatedStorage.ACS_Engine.Events.EditKillConditions:FireServer("InAir", true)
         end
-    end
-
-    if AdsFunction then
-        if CombatHookBulletMultiplier then
-            local BulletsData = debug.getupvalue(AdsFunction, 3)
-            if BulletsData then
-                BulletsData["Bullets"] = 10
-            else
-                BulletsData["Bullets"] = 1
+        if AlwaysNoscopeKill then
+            ReplicatedStorage.ACS_Engine.Events.EditKillConditions:FireServer("Aiming", false)
+        end
+        
+        local PlayerWeapon = workspace[LocalPlayer.Name].ACS_Client.ACS_Framework
+        local ReloadFunction = Hydroxide.searchClosure(PlayerWeapon, "Reload", 1, {
+            [1] = "Type", [2] = "Gun", [3] = "Stinger", [4] = "Launcher", [5] = "Grapple Hook", [6] = "Ammo"
+        })
+        local AdsFunction = Hydroxide.searchClosure(PlayerWeapon, "ADS", 3, {
+            [1] = "IsAimingDownSights", [2] = "IsTurret", [3] = "setInProgress", [4] = "ADS", [5] = "canAim", [6] = 0.2
+        })
+        
+        if ReloadFunction then
+            local AmmoData = debug.getupvalue(ReloadFunction, 1)
+            if AmmoData then
+                if CombatHookInfAmmo then
+                    AmmoData["Ammo"] = 9999
+                else
+                    AmmoData["Ammo"] = 1
+                end
             end
         end
 
-        if CombatHookNoBulletDrop then
-            local BulletDropData = debug.getupvalue(AdsFunction, 3)
-            if BulletDropData then
-                BulletDropData["BulletDrop"] = 0
-            else
-                BulletDropData["BulletDrop"] = 0.25
+        if AdsFunction then
+            if CombatHookBulletMultiplier then
+                local BulletsData = debug.getupvalue(AdsFunction, 3)
+                if BulletsData then
+                    BulletsData["Bullets"] = 10
+                else
+                    BulletsData["Bullets"] = 1
+                end
             end
-        end
 
-        if CombatHookMagicBullet then
-            local BulletPenetrationData = debug.getupvalue(AdsFunction, 3)
-            if BulletPenetrationData then
-                BulletPenetrationData["BulletPenetration"] = math.huge
-            else
-                BulletPenetrationData["BulletPenetration"] = 75
+            if CombatHookNoBulletDrop then
+                local BulletDropData = debug.getupvalue(AdsFunction, 3)
+                if BulletDropData then
+                    BulletDropData["BulletDrop"] = 0
+                else
+                    BulletDropData["BulletDrop"] = 0.25
+                end
+            end
+
+            if CombatHookMagicBullet then
+                local BulletPenetrationData = debug.getupvalue(AdsFunction, 3)
+                if BulletPenetrationData then
+                    BulletPenetrationData["BulletPenetration"] = math.huge
+                else
+                    BulletPenetrationData["BulletPenetration"] = 75
+                end
             end
         end
     end
