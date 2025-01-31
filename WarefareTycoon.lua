@@ -101,6 +101,7 @@ Combat:AddSection({Name = "Hooks"})
 Combat:AddToggle({Name = "Infinite Ammo", Flag = "combat_hook_inf_ammo", Save = true})
 Combat:AddToggle({Name = "Bullet Multiplier", Flag = "combat_hook_bullet_multiplier", Save = true})
 Combat:AddToggle({Name = "Magic Bullet", Flag = "combat_hook_magic_bullet", Save = true})
+Combat:AddToggle({Name = "No Bullet Drops", Flag = "combat_hook_no_bullet_drop", Save = true})
 Combat:AddToggle({Name = "Always Air Kill", Flag = "combat_hooks_airkill", Save = true})
 Combat:AddToggle({Name = "Always No Scope", Flag = "combat_hooks_no_scope", Save = true})
 Combat:AddButton({Name = "Force Spot Everyone", Callback = function()
@@ -230,26 +231,24 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-local last_tick_hook = tick()
-RunService.RenderStepped:Connect(function()
-    local hook_tick = tick()
-    
-    if hook_tick - last_tick_hook >= 4 then
-        lastExecuted = currentTime
-        
+task.spawn(function() -- jit was so fried i had to use task.spawn 😭
+    while true do
+        task.wait(1)
+
         local CombatHookInfAmmo = OrionLib.Flags["combat_hook_inf_ammo"].Value
         local CombatHookBulletMultiplier = OrionLib.Flags["combat_hook_bullet_multiplier"].Value
         local CombatHookMagicBullet = OrionLib.Flags["combat_hook_magic_bullet"].Value
+        local CombatHookNoBulletDrop = OrionLib.Flags["combat_hook_no_bullet_drop"]
         local AlwaysAirKill = OrionLib.Flags["combat_hooks_airkill"].Value
         local AlwaysNoscopeKill = OrionLib.Flags["combat_hooks_no_scope"].Value
-        
+
         if AlwaysAirKill then
             ReplicatedStorage.ACS_Engine.Events.EditKillConditions:FireServer("InAir", true)
         end
         if AlwaysNoscopeKill then
             ReplicatedStorage.ACS_Engine.Events.EditKillConditions:FireServer("Aiming", false)
         end
-        
+
         local PlayerWeapon = workspace[LocalPlayer.Name].ACS_Client.ACS_Framework
         local ReloadFunction = Hydroxide.searchClosure(PlayerWeapon, "Reload", 1, {
             [1] = "Type", [2] = "Gun", [3] = "Stinger", [4] = "Launcher", [5] = "Grapple Hook", [6] = "Ammo"
@@ -257,50 +256,21 @@ RunService.RenderStepped:Connect(function()
         local AdsFunction = Hydroxide.searchClosure(PlayerWeapon, "ADS", 3, {
             [1] = "IsAimingDownSights", [2] = "IsTurret", [3] = "setInProgress", [4] = "ADS", [5] = "canAim", [6] = 0.2
         })
-        
+
         if ReloadFunction then
             local AmmoData = debug.getupvalue(ReloadFunction, 1)
             if AmmoData then
-                if CombatHookInfAmmo then
-                    AmmoData["Ammo"] = 9999
-                else
-                    AmmoData["Ammo"] = 1
-                end
+                AmmoData["Ammo"] = CombatHookInfAmmo and 99998 or 20
             end
         end
 
         if AdsFunction then
-            if CombatHookBulletMultiplier then
-                local BulletsData = debug.getupvalue(AdsFunction, 3)
-                if BulletsData then
-                    BulletsData["Bullets"] = 10
-                else
-                    BulletsData["Bullets"] = 1
-                end
-            end
-
-            if CombatHookNoBulletDrop then
-                local BulletDropData = debug.getupvalue(AdsFunction, 3)
-                if BulletDropData then
-                    BulletDropData["BulletDrop"] = 0
-                else
-                    BulletDropData["BulletDrop"] = 0.25
-                end
-            end
-
-            if CombatHookMagicBullet then
-                local BulletPenetrationData = debug.getupvalue(AdsFunction, 3)
-                if BulletPenetrationData then
-                    BulletPenetrationData["BulletPenetration"] = math.huge
-                else
-                    BulletPenetrationData["BulletPenetration"] = 75
-                end
+            local AdsData = debug.getupvalue(AdsFunction, 3)
+            if AdsData then
+                AdsData["Bullets"] = CombatHookBulletMultiplier and 10 or 1
+                AdsData["BulletDrop"] = CombatHookNoBulletDrop and 0 or 0.25
+                AdsData["BulletPenetration"] = CombatHookMagicBullet and math.huge or 75
             end
         end
     end
 end)
-
-local WindowMobToggle = OrionLib:WindowMobileToggle({})
-
--- Workspace.Airdrops.thingy.Bottom
--- Workspace.Drops
