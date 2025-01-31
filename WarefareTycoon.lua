@@ -143,58 +143,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
     
-    --// AntiAim
-    do
-	    if OrionLib.Flags["AntiAimbotMainToggle"].Value and HumanoidRootPart then -- somehow fried this and broke it
-            local Yaw = OrionLib.Flags["AntiAimbotYaw"].Value
-            local PitchSetting = OrionLib.Flags["AntiAimbotPitch"].Value
-            local PitchAmount = OrionLib.Flags["AntiAimbotPitchAmount"].Value
-            local Roll = OrionLib.Flags["AntiAimbotRoll"].Value
-            local JitterEnabled = OrionLib.Flags["AntiAimbotJitterToggle"].Value
-            local JitterAmount = OrionLib.Flags["AntiAimbotJitterAmount"].Value
-            local DesyncEnabled = OrionLib.Flags["AntiAimbotDesyncToggle"].Value
-            local DesyncAmount = OrionLib.Flags["AntiAimbotDesyncAmount"].Value
-            local DynamicMode = OrionLib.Flags["AntiAimbotDynamicMode"].Value
-            local SpinbotEnabled = OrionLib.Flags["AntiAimbotSpinbotToggle"].Value
-            local SpinbotSpeed = OrionLib.Flags["AntiAimbotSpinbotSpeed"].Value
-            local SpinbotAngle = OrionLib.Flags["AntiAimbotSpinbotAngle"].Value
-            local YawOffset = OrionLib.Flags["AntiAimbotYawOffset"].Value
-            local PitchOffset = OrionLib.Flags["AntiAimbotPitchOffset"].Value
-            local RollOffset = OrionLib.Flags["AntiAimbotRollOffset"].Value
-            
-            local Pitch
-            if PitchSetting == "Down" then
-                Pitch = -PitchAmount
-            elseif PitchSetting == "Up" then
-                Pitch = PitchAmount
-            elseif PitchSetting == "Zero" then
-                Pitch = 0
-            elseif PitchSetting == "Jitter" then
-                Pitch = math.random(-PitchAmount, PitchAmount)
-            end
-
-            local FinalYaw = Yaw + YawOffset
-            if DynamicMode == "Aggressive" then
-                FinalYaw = FinalYaw + math.random(-15, 15)
-            elseif DynamicMode == "Passive" then
-                FinalYaw = FinalYaw / 2
-            end
-            if JitterEnabled then
-                FinalYaw = FinalYaw + math.random(-JitterAmount, JitterAmount)
-            end
-            if DesyncEnabled then
-                FinalYaw = FinalYaw + DesyncAmount * (math.sin(tick() * 10) > 0 and 1 or -1)
-            end
-            if SpinbotEnabled then
-                FinalYaw = FinalYaw + math.sin(tick() * SpinbotSpeed) * SpinbotAngle
-            end
-
-            local FinalPitch = Pitch + PitchOffset
-            local FinalRoll = Roll + RollOffset
-            HumanoidRootPart.CFrame = CFrame.new(HumanoidRootPart.Position) * CFrame.Angles(math.rad(FinalPitch), math.rad(FinalYaw), math.rad(FinalRoll))            
-	    end
-    end
-    
     --// Misc
 	do
 	    local SpeedMainToggle = OrionLib.Flags["cframe_speed_main_toggle"].Value
@@ -283,60 +231,65 @@ RunService.RenderStepped:Connect(function()
 end)
 
 RunService.RenderStepped:Connect(function()
-	--// Hooks
-    do
-        local CombatHookInfAmmo = OrionLib.Flags["combat_hook_inf_ammo"]
-        local CombatHookBulletMultiplier = OrionLib.Flags["combat_hook_bullet_multiplier"]
-        local CombatHookMagicBullet = OrionLib.Flags["combat_hook_magic_bullet"]
-	    local AlwaysAirKill = OrionLib.Flags["combat_hooks_airkill"].Value
-	    local AlwaysNoscopeKill = OrionLib.Flags["combat_hooks_no_scope"].Value
-	    
-	    if AlwaysAirKill then
-	        ReplicatedStorage.ACS_Engine.Events.EditKillConditions:FireServer("InAir", true)
-	    end
-	    if AlwaysNoscopeKill then
-	        ReplicatedStorage.ACS_Engine.Events.EditKillConditions:FireServer("Aiming", false)
-	    end
-		if CombatHookInfAmmo then
-			debug.getupvalue(Hydroxide.searchClosure(workspace[LocalPlayer.Name].ACS_Client.ACS_Framework, "Reload", 1, {
-			    [1] = "Type",
-			    [2] = "Gun",
-			    [3] = "Stinger",
-			    [4] = "Launcher",
-			    [5] = "Grapple Hook",
-			    [6] = "Ammo"
-			}), 1)["Ammo"] = math.huge
-		end
-		if CombatHookBulletMultiplier then
-			debug.getupvalue(Hydroxide.searchClosure(workspace.NeraNisus.ACS_Client.ACS_Framework, "ADS", 3, {
-				[1] = "IsAimingDownSights",
-				[2] = "IsTurret",
-				[3] = "setInProgress",
-				[4] = "ADS",
-				[5] = "canAim",
-				[6] = 0.2
-			}), 3)["Bullets"] = 10
-		end
-		if CombatHookNoBulletDrop then
-			debug.getupvalue(Hydroxide.searchClosure(workspace.NeraNisus.ACS_Client.ACS_Framework, "ADS", 3, {
-				[1] = "IsAimingDownSights",
-				[2] = "IsTurret",
-				[3] = "setInProgress",
-				[4] = "ADS",
-				[5] = "canAim",
-				[6] = 0.2
-			}), 3)["BulletDrop"] = 0
-		end
-		if CombatHookMagicBullet then
-			debug.getupvalue(Hydroxide.searchClosure(workspace.NeraNisus.ACS_Client.ACS_Framework, "ADS", 3, {
-				[1] = "IsAimingDownSights",
-				[2] = "IsTurret",
-				[3] = "setInProgress",
-				[4] = "ADS",
-				[5] = "canAim",
-				[6] = 0.2
-			}), 3)["BulletPenetration"] = math.huge
-		end
+    local CombatHookInfAmmo = OrionLib.Flags["combat_hook_inf_ammo"].Value
+    local CombatHookBulletMultiplier = OrionLib.Flags["combat_hook_bullet_multiplier"].Value
+    local CombatHookMagicBullet = OrionLib.Flags["combat_hook_magic_bullet"].Value
+    local AlwaysAirKill = OrionLib.Flags["combat_hooks_airkill"].Value
+    local AlwaysNoscopeKill = OrionLib.Flags["combat_hooks_no_scope"].Value
+    
+    if AlwaysAirKill then
+        ReplicatedStorage.ACS_Engine.Events.EditKillConditions:FireServer("InAir", true)
+    end
+    if AlwaysNoscopeKill then
+        ReplicatedStorage.ACS_Engine.Events.EditKillConditions:FireServer("Aiming", false)
+    end
+    
+    local PlayerWeapon = workspace[LocalPlayer.Name].ACS_Client.ACS_Framework
+    local ReloadFunction = Hydroxide.searchClosure(PlayerWeapon, "Reload", 1, {
+        [1] = "Type", [2] = "Gun", [3] = "Stinger", [4] = "Launcher", [5] = "Grapple Hook", [6] = "Ammo"
+    })
+    local AdsFunction = Hydroxide.searchClosure(PlayerWeapon, "ADS", 3, {
+        [1] = "IsAimingDownSights", [2] = "IsTurret", [3] = "setInProgress", [4] = "ADS", [5] = "canAim", [6] = 0.2
+    })
+    
+    if ReloadFunction then
+        local AmmoData = debug.getupvalue(ReloadFunction, 1)
+        if AmmoData then
+            if CombatHookInfAmmo then
+                AmmoData["Ammo"] = 99998
+            else
+                AmmoData["Ammo"] = 20
+            end
+        end
+    end
+
+    if AdsFunction then
+        if CombatHookBulletMultiplier then
+            local BulletsData = debug.getupvalue(AdsFunction, 3)
+            if BulletsData then
+                BulletsData["Bullets"] = 10
+            else
+                BulletsData["Bullets"] = 1
+            end
+        end
+
+        if CombatHookNoBulletDrop then
+            local BulletDropData = debug.getupvalue(AdsFunction, 3)
+            if BulletDropData then
+                BulletDropData["BulletDrop"] = 0
+            else
+                BulletDropData["BulletDrop"] = 0.25
+            end
+        end
+
+        if CombatHookMagicBullet then
+            local BulletPenetrationData = debug.getupvalue(AdsFunction, 3)
+            if BulletPenetrationData then
+                BulletPenetrationData["BulletPenetration"] = math.huge
+            else
+                BulletPenetrationData["BulletPenetration"] = 75
+            end
+        end
     end
 end)
 
