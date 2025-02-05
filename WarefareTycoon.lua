@@ -7,6 +7,7 @@ local MainColor = Color3.fromRGB(255, 255, 255)
 local DeveloperMode = true
 local CallbackList = {}
 local ConnectionList = {}
+local ChatSpamLists = {}
 local MovementCache = {Time = {}, Position = {}}
 
 local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/NymeraAnHomie/Library/refs/heads/main/OrionLib/Source.lua')))()
@@ -33,32 +34,33 @@ LPH_NO_VIRTUALIZE(function() -- UI Creation
 	Combat:AddSlider({Name = "Transparency", Max = 1, Increment = 0.01, Default = 0.4, Flag = "combat_hitboxextend_transparency", Save = true})
 	Combat:AddColorpicker({Name = "Color", Default = MainColor, Flag = "combat_hitboxextend_color", Save = true})
 	
-	Combat:AddSection({Name = "Knife Aura"})
-	Combat:AddToggle({Name = "Enabled", Flag = "combat_knife_aura_main_toggle", Save = true})
-	Combat:AddSlider({Name = "Radius", Max = 5000, Default = 100, Flag = "combat_knife_aura_radius", Save = true})
+	Combat:AddSection({Name = "Knife Bot"})
+	Combat:AddToggle({Name = "Enabled", Flag = "combat_knife_bot_main_toggle", Save = true})
+	Combat:AddToggle({Name = "Kill All", Flag = "combat_knife_bot_kill_all", Save = true})
+	Combat:AddSlider({Name = "Radius", Max = 10000, Default = 100, Flag = "combat_knife_bot_radius", Save = true})
 	
-	Combat:AddSection({Name = "Auto Burst"})
-	Combat:AddToggle({Name = "Enabled", Flag = "combat_auto_burst_main_toggle", Save = true})
-	Combat:AddToggle({Name = "Percent", Flag = "combat_auto_burst_percent", Save = true})
-	Combat:AddSlider({Name = "Burst", Max = 10, Increment = 1, Default = 10, Flag = "combat_auto_burst_burst_amount", Save = true})
+	Combat:AddSection({Name = "Exploits"})
+	Combat:AddToggle({Name = "Infinite Ammo", Flag = "combat_exploits_inf_ammo", Save = true})
+	Combat:AddToggle({Name = "Bullet Multiplier", Flag = "combat_exploits_bullet_multiplier", Save = true})
+	Combat:AddToggle({Name = "Magic Bullet", Flag = "combat_exploits_magic_bullet", Save = true})
+	Combat:AddToggle({Name = "Always Air Kill", Flag = "combat_exploitss_airkill", Save = true})
+	Combat:AddToggle({Name = "Always No Scope", Flag = "combat_exploitss_no_scope", Save = true})
+	Combat:AddToggle({Name = "No Drops", Flag = "combat_exploits_no_bullet_drop", Save = true})
+	Combat:AddToggle({Name = "No Spread", Flag = "combat_exploits_no_bullet_spread", Save = true})
+	Combat:AddToggle({Name = "No Recoil", Flag = "combat_exploits_no_bullet_recoil", Save = true})
 	
-	Combat:AddSection({Name = "Hooks"})
-	Combat:AddToggle({Name = "Infinite Ammo", Flag = "combat_hook_inf_ammo", Save = true})
-	Combat:AddToggle({Name = "Bullet Multiplier", Flag = "combat_hook_bullet_multiplier", Save = true})
-	Combat:AddToggle({Name = "Magic Bullet", Flag = "combat_hook_magic_bullet", Save = true})
-	Combat:AddToggle({Name = "No Drops", Flag = "combat_hook_no_bullet_drop", Save = true})
-	Combat:AddToggle({Name = "No Spread", Flag = "combat_hook_no_bullet_spread", Save = true})
-	Combat:AddToggle({Name = "No Recoil", Flag = "combat_hook_no_bullet_recoil", Save = true})
-	Combat:AddToggle({Name = "Always Air Kill", Flag = "combat_hooks_airkill", Save = true})
-	Combat:AddToggle({Name = "Always No Scope", Flag = "combat_hooks_no_scope", Save = true})
+	Misc:AddSection({Name = "Movement"})
 	
-	Misc:AddSection({Name = "Miscellaneous"})
-	Misc:AddToggle({Name = "Auto Sprint", Flag = "miscellaneous_auto_sprint", Save = true})
+	Misc:AddSection({Name = "Tycoon"})
+	Misc:AddToggle({Name = "Auto Collect Cash", Flag = "tycoon_auto_collect_cash", Save = true})
+	Misc:AddToggle({Name = "Auto Buy", Flag = "tycoon_auto_buy", Save = true})
+	Misc:AddToggle({Name = "Auto Prestige", Flag = "tycoon_auto_prestige", Save = true})
 	
-	Misc:AddSection({Name = "Base"})
-	Misc:AddToggle({Name = "Auto Collect Cash", Flag = "base_auto_collect_cash", Save = true})
-	Misc:AddToggle({Name = "Auto Buy", Flag = "base_auto_buy", Save = true})
-	Misc:AddToggle({Name = "Auto Prestige", Flag = "base_auto_prestige", Save = true})
+	Misc:AddSection({Name = "Sounds"})
+    Misc:AddDropdown({Name = "Hit Sound", Flag = "sounds_hit", Default = "none", Options = {"none", "amongus", "fatality", "bubble", "cod", "anime", "anime2", "anime3", "anime4"} })  
+    Misc:AddDropdown({Name = "Kill Sound", Flag = "sounds_kill", Default = "none", Options = {"none", "amongus", "fatality", "bubble", "cod", "anime", "anime2", "anime3", "anime4"} })
+	
+	Misc:AddSection({Name = "Chat Spam"})
 	
 	AntiAim:AddSection({Name = "Anti-Aimbot Angle"})
     AntiAim:AddToggle({Name = "Enabled", Flag = "anti_aim_main_toggle", Save = true})
@@ -79,11 +81,9 @@ LPH_JIT_MAX(function() -- Main Cheat
 	local Lighting = game:GetService("Lighting")
     local LocalPlayer = Players.LocalPlayer
     local Camera = Workspace.CurrentCamera
-    
-    local AutoBurstFOV = Drawing.new("Circle")
 
     local network = {}
-	function network.send(name, action)
+	function network:send(name, action)
 	    if name == "spot" then
 	        if action then
 	            ReplicatedStorage.PlayerEvents.SpotPlayer:FireServer(action)
@@ -100,7 +100,7 @@ LPH_JIT_MAX(function() -- Main Cheat
 			        ["shellMaxDist"] = action.MaxDistance,
 			        ["filterDescendants"] = {
 			            [1] = LocalPlayer.Character,
-			            [2] = workspace.Camera.Viewmodel
+			            [2] = Workspace.Camera.Viewmodel
 			        }
 			    },
 			    [2] = Target.Character.Humanoid,
@@ -110,13 +110,13 @@ LPH_JIT_MAX(function() -- Main Cheat
 			}
 			
 			ReplicatedStorage.ACS_Engine.Events.Damage:InvokeServer(unpack(args))
-	    elseif name == "collectcash" then
+	    elseif name == "collectcash" and not action then
 	        ReplicatedStorage.CollectCashEvent:FireServer()
-	    elseif name == "prestige" then
+	    elseif name == "prestige" and not action then
 	        ReplicatedStorage.RequestPrestigeEvent:FireServer()
 	    elseif name == "purchase" then
 	        if action.name and action.ButtonPart then
-	            ReplicatedStorage.RequestPurchaseEvent:FireServer(action.name)
+	            ReplicatedStorage.RequestPurchaseEvent:FireServer(action)
 	        end
 	    elseif name == "purchase_vehicle" then
 	        if action.name and type(action) == "table" then
@@ -151,49 +151,58 @@ LPH_JIT_MAX(function() -- Main Cheat
 	        end
 	    end
 	
-	    if Flags["combat_knife_aura_main_toggle"].Value then
-	        local KnifeAuraRadius = Flags["combat_knife_aura_radius"].Value
-	
-	        for _, Player in next, Players:GetPlayers() do
-	            if Player.Name ~= Players.LocalPlayer.Name then
-	                if not Teamcheck or Player.Team ~= Players.LocalPlayer.Team then
-	                    if Player.Character and Player.Character:FindFirstChild("Head") then
-	                        local playerHeadPosition = Player.Character.Head.Position
-	                        local localPlayerPosition = Players.LocalPlayer.Character.Head.Position
-	                        local distance = (localPlayerPosition - playerHeadPosition).Magnitude
-	
-	                        if distance <= KnifeAuraRadius then
-	                            network.send("stab", {
-	                                Target = Player.Name,
-	                                StabSpeed = 99999,
-	                                MaxDistance = KnifeAuraRadius,
-	                            })
-	                        end
-	                    end
-	                end
-	            end
-	        end
-	    end
+	    if Flags["combat_knife_bot_main_toggle"].Value then
+		    for _, Player in next, Players:GetPlayers() do
+		        if Player.Name ~= Players.LocalPlayer.Name then
+		            if not Teamcheck or Player.Team ~= Players.LocalPlayer.Team then
+		                if Player.Character and Player.Character:FindFirstChild("Head") then
+		                    if (Players.LocalPlayer.Character.Head.Position - Player.Character.Head.Position).Magnitude <= Flags["combat_knife_bot_radius"].Value then
+		                        network:send("stab", {
+		                            Target = Player.Name,
+		                            StabSpeed = 10,
+		                            MaxDistance = Flags["combat_knife_bot_radius"].Value,
+		                        })
+		                    end
+		                end
+		            end
+		        end
+		    end
+		
+		    if Flags["combat_knife_bot_kill_all"].Value then
+		        for _, Player in next, Players:GetPlayers() do
+		            if Player.Name ~= Players.LocalPlayer.Name then
+		                if not Teamcheck or Player.Team ~= Players.LocalPlayer.Team then
+		                    if Player.Character and Player.Character:FindFirstChild("Head") then
+		                        network:send("stab", {
+		                            Target = Player.Name,
+		                            StabSpeed = 10,
+		                            MaxDistance = math.huge,
+		                        })
+		                    end
+		                end
+		            end
+		        end
+		    end
+		end
 	end))
 	
 	table.insert(ConnectionList, RunService.RenderStepped:Connect(function()
-	    if Flags["base_auto_collect_cash"].Value then
-	        network.send("collectcash", nil)
+	    if Flags["tycoon_auto_collect_cash"].Value then
+	        network:send("collectcash")
 	    end
 	    
-	    if Flags["base_auto_buy"].Value then
+	    if Flags["tycoon_auto_buy"].Value then
 	        for _, child in pairs(Workspace[LocalPlayer.AssociatedTycoon.Value].BuyButtons:GetChildren()) do
 	            if child:FindFirstChild("ButtonPart") then
-	                local action = {name = child.Name, ButtonPart = child}
-	                network.send("purchase", action)
+	                network:send("purchase", child.ButtonPart)
 	            end
 	        end
 	        local vehicleNames = {}
-	        network.send("purchase_vehicle", vehicleNames)
+	        network:send("purchase_vehicle", vehicleNames)
 	    end
 	    
-	    if Flags["base_auto_prestige"].Value then
-	        network.send("prestige", nil)
+	    if Flags["tycoon_auto_prestige"].Value then
+	        network:send("prestige")
 	    end
 	end))
 
@@ -243,15 +252,15 @@ LPH_JIT_MAX(function() -- Main Cheat
 	    end
 	
 	    while stillGoing do
-	        task.wait(1)
+	        task.wait(.35) -- you would not believe the lag
 	
 	        RefreshPlayerWeapon()
 	
 	        if PlayerWeapon then
-	            if Flags["combat_hooks_airkill"].Value then
+	            if Flags["combat_exploitss_airkill"].Value then
 	                ReplicatedStorage.ACS_Engine.Events.EditKillConditions:FireServer("InAir", true)
 	            end
-	            if Flags["combat_hooks_no_scope"].Value then
+	            if Flags["combat_exploitss_no_scope"].Value then
 	                ReplicatedStorage.ACS_Engine.Events.EditKillConditions:FireServer("Aiming", false)
 	            end
 	
@@ -271,7 +280,7 @@ LPH_JIT_MAX(function() -- Main Cheat
 	            if RecoilFunction then
 	                local RecoilData = debug.getupvalue(RecoilFunction, 13)
 	                if RecoilData then
-	                    if Flags["combat_hook_no_bullet_recoil"].Value then
+	                    if Flags["combat_exploits_no_bullet_recoil"].Value then
 	                        RecoilData["HorizontalRecoil"] = 0
 	                        RecoilData["VerticalRecoil"] = 0
 	                    else
@@ -284,24 +293,24 @@ LPH_JIT_MAX(function() -- Main Cheat
 	            if ReloadFunction then
 	                local AmmoData = debug.getupvalue(ReloadFunction, 1)
 	                if AmmoData then
-	                    AmmoData["Ammo"] = Flags["combat_hook_inf_ammo"].Value and 99998 or 20
+	                    AmmoData["Ammo"] = Flags["combat_exploits_inf_ammo"].Value and 99998 or 20
 	                end
 	            end
 	
 	            if AdsFunction then
 	                local AdsData = debug.getupvalue(AdsFunction, 3)
 	                if AdsData then
-	                    AdsData["Bullets"] = Flags["combat_hook_bullet_multiplier"].Value and 10 or 1
-	                    AdsData["BulletDrop"] = Flags["combat_hook_no_bullet_drop"].Value and 0 or 0.25
-	                    AdsData["BulletPenetration"] = Flags["combat_hook_magic_bullet"].Value and math.huge or 75
+	                    AdsData["Bullets"] = Flags["combat_exploits_bullet_multiplier"].Value and 10 or 1
+	                    AdsData["BulletDrop"] = Flags["combat_exploits_no_bullet_drop"].Value and 0 or 0.25
+	                    AdsData["BulletPenetration"] = Flags["combat_exploits_magic_bullet"].Value and math.huge or 75
 	                end
 	            end
 	
 	            if BulletSpreadFunction then
 	                local BulletSpreadData = debug.getupvalue(BulletSpreadFunction, 2)
 	                if BulletSpreadData and BulletSpreadData["MaxSpread"] then
-	                    BulletSpreadData["MaxSpread"] = Flags["combat_hook_no_bullet_spread"].Value and 0 or 0.75
-	                    BulletSpreadData["MinSpread"] = Flags["combat_hook_no_bullet_spread"].Value and 0 or 0.75
+	                    BulletSpreadData["MaxSpread"] = Flags["combat_exploits_no_bullet_spread"].Value and 0 or 0.75
+	                    BulletSpreadData["MinSpread"] = Flags["combat_exploits_no_bullet_spread"].Value and 0 or 0.75
 	                end
 	            end
 	        end
@@ -319,4 +328,3 @@ LPH_JIT_MAX(function() -- Main Cheat
 	end)
 	-- wasn't that so bad right?
 end)()
-
