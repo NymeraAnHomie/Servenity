@@ -7,70 +7,11 @@ local MainColor = Color3.fromRGB(255, 255, 255)
 local DeveloperMode = true
 local CallbackList = {}
 local ConnectionList = {}
-local ChatSpamLists = {}
 local MovementCache = {Time = {}, Position = {}}
 
 local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/NymeraAnHomie/Library/refs/heads/main/OrionLib/Source.lua')))()
 local Hydroxide = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/Upbolt/Hydroxide/revision/ohaux.lua"))()
 local Flags = OrionLib.Flags
-
-LPH_NO_VIRTUALIZE(function() -- UI Creation
-    local HttpService = game:GetService("HttpService")
-    
-    local Window = OrionLib:MakeWindow({Name = "Servenity", IntroEnabled = false, SaveConfig = true, ConfigFolder = "Servenity"})
-    OrionLib.SelectedTheme = "Default"
-
-	local Combat = Window:MakeTab({Name = "Combat", Icon = "rbxassetid://4483345998"})
-	local Misc = Window:MakeTab({Name = "Misc", Icon = "rbxassetid://10734920149"})
-	local AntiAim = Window:MakeTab({Name = "Anti Aim", Icon = "rbxassetid://137296469153995"})
-	local Visual = Window:MakeTab({Name = "Visual", Icon = "rbxassetid://10723346959"})
-	
-	Combat:AddSection({Name = "Checks"})
-	Combat:AddToggle({Name = "Team", Flag = "combat_checks_team", Save = true})
-	
-	Combat:AddSection({Name = "Hitbox Extender"})
-	Combat:AddToggle({Name = "Enabled", Flag = "combat_hitboxextend_main_toggle", Save = true})
-	Combat:AddSlider({Name = "Size", Max = 100, Default = 14, Flag = "combat_hitboxextend_size", Save = true})
-	Combat:AddSlider({Name = "Transparency", Max = 1, Increment = 0.01, Default = 0.4, Flag = "combat_hitboxextend_transparency", Save = true})
-	Combat:AddColorpicker({Name = "Color", Default = MainColor, Flag = "combat_hitboxextend_color", Save = true})
-	
-	Combat:AddSection({Name = "Knife Bot"})
-	Combat:AddToggle({Name = "Enabled", Flag = "combat_knife_bot_main_toggle", Save = true})
-	Combat:AddToggle({Name = "Kill All", Flag = "combat_knife_bot_kill_all", Save = true})
-	Combat:AddSlider({Name = "Radius", Max = 10000, Default = 100, Flag = "combat_knife_bot_radius", Save = true})
-	
-	Combat:AddSection({Name = "Exploits"})
-	Combat:AddToggle({Name = "Infinite Ammo", Flag = "combat_exploits_inf_ammo", Save = true})
-	Combat:AddToggle({Name = "Bullet Multiplier", Flag = "combat_exploits_bullet_multiplier", Save = true})
-	Combat:AddToggle({Name = "Magic Bullet", Flag = "combat_exploits_magic_bullet", Save = true})
-	Combat:AddToggle({Name = "Always Air Kill", Flag = "combat_exploitss_airkill", Save = true})
-	Combat:AddToggle({Name = "Always No Scope", Flag = "combat_exploitss_no_scope", Save = true})
-	Combat:AddToggle({Name = "No Drops", Flag = "combat_exploits_no_bullet_drop", Save = true})
-	Combat:AddToggle({Name = "No Spread", Flag = "combat_exploits_no_bullet_spread", Save = true})
-	Combat:AddToggle({Name = "No Recoil", Flag = "combat_exploits_no_bullet_recoil", Save = true})
-	
-	Misc:AddSection({Name = "Movement"})
-	
-	Misc:AddSection({Name = "Tycoon"})
-	Misc:AddToggle({Name = "Auto Collect Cash", Flag = "tycoon_auto_collect_cash", Save = true})
-	Misc:AddToggle({Name = "Auto Buy", Flag = "tycoon_auto_buy", Save = true})
-	Misc:AddToggle({Name = "Auto Prestige", Flag = "tycoon_auto_prestige", Save = true})
-	
-	Misc:AddSection({Name = "Sounds"})
-    Misc:AddDropdown({Name = "Hit Sound", Flag = "sounds_hit", Default = "none", Options = {"none", "amongus", "fatality", "bubble", "cod", "anime", "anime2", "anime3", "anime4"} })  
-    Misc:AddDropdown({Name = "Kill Sound", Flag = "sounds_kill", Default = "none", Options = {"none", "amongus", "fatality", "bubble", "cod", "anime", "anime2", "anime3", "anime4"} })
-	
-	Misc:AddSection({Name = "Chat Spam"})
-	
-	AntiAim:AddSection({Name = "Anti-Aimbot Angle"})
-    AntiAim:AddToggle({Name = "Enabled", Flag = "anti_aim_main_toggle", Save = true})
-    AntiAim:AddDropdown({Name = "Pitch", Flag = "anti_aim_pitch", Default = "Down", Options = {"Off", "Down", "Up", "Jitter", "Zero"} })
-    AntiAim:AddDropdown({Name = "Degree", Flag = "anti_aim_degree", Default = "Off", Options = {"Off", "180", "Spin"} })
-    AntiAim:AddSlider({Name = "Yaw Pitch", Max = 100, Default = 14, Flag = "anti_aim_yaw_pitch", Save = true})
-    AntiAim:AddDropdown({Name = "Disabler", Flag = "anti_aim_disabler", Default = "Off", Options = {"Off", "InAir", "Freefall"} })
-    
-    OrionLib:WindowMobileToggle({})
-end)()
 
 LPH_JIT_MAX(function() -- Main Cheat
     local RunService = game:GetService("RunService")
@@ -81,66 +22,90 @@ LPH_JIT_MAX(function() -- Main Cheat
 	local Lighting = game:GetService("Lighting")
     local LocalPlayer = Players.LocalPlayer
     local Camera = Workspace.CurrentCamera
+    
+    local BacktrackObjects = Instance.new("Folder", workspace)
+    local HitboxObjects = Instance.new("Folder", workspace)
+	
+	function Raycast(Origin, Direction, Filter, Whitelist)
+	    local RaycastParams = RaycastParams.new()
+	    RaycastParams.FilterDescendantsInstances = Filter or {}
+	    RaycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+	    RaycastParams.IgnoreWater = false
+	    if Whitelist then
+	        RaycastParams.FilterType = Enum.RaycastFilterType.Whitelist
+	        RaycastParams.FilterDescendantsInstances = Whitelist
+	    end
+	    local RaycastResult = workspace:Raycast(Origin, Direction, RaycastParams)
+	    return RaycastResult
+	end
 
     local network = {}
-	function network:send(name, action)
+	function network:send(name, ...)
+	    local action = {...}
 	    if name == "spot" then
-	        if action then
-	            ReplicatedStorage.PlayerEvents.SpotPlayer:FireServer(action)
+	        if action[1] then
+	            ReplicatedStorage.PlayerEvents.SpotPlayer:FireServer(action[1])
 	        end
 	    elseif name == "stab" then
-	        local Target = Players[action.Target]
-			local args = {
-			    [1] = {
-			        ["shellSpeed"] = action.StabSpeed,
-			        ["shellName"] = "DefaultMelee",
-			        ["origin"] = Vector3.new(0, 0, 0),
-			        ["weaponName"] = "Knife",
-			        ["shellType"] = "Melee",
-			        ["shellMaxDist"] = action.MaxDistance,
-			        ["filterDescendants"] = {
-			            [1] = LocalPlayer.Character,
-			            [2] = Workspace.Camera.Viewmodel
-			        }
-			    },
-			    [2] = Target.Character.Humanoid,
-			    [3] = 2,
-			    [4] = 1,
-			    [5] = Target.Character.Head
-			}
-			
-			ReplicatedStorage.ACS_Engine.Events.Damage:InvokeServer(unpack(args))
-	    elseif name == "collectcash" and not action then
+	        local Target = Players[action[1].Target]
+	        local args = {
+	            [1] = {
+	                ["shellSpeed"] = action[1].StabSpeed,
+	                ["shellName"] = "DefaultMelee",
+	                ["origin"] = Vector3.new(0, 0, 0),
+	                ["weaponName"] = "Knife",
+	                ["shellType"] = "Melee",
+	                ["shellMaxDist"] = action[1].MaxDistance,
+	                ["filterDescendants"] = {
+	                    [1] = LocalPlayer.Character,
+	                    [2] = workspace.Camera.Viewmodel
+	                }
+	            },
+	            [2] = Target.Character.Humanoid,
+	            [3] = 2,
+	            [4] = 1,
+	            [5] = Target.Character.Head
+	        }
+	
+	        ReplicatedStorage.ACS_Engine.Events.Damage:InvokeServer(unpack(args))
+	    elseif name == "collectcash" and not action[1] then
 	        ReplicatedStorage.CollectCashEvent:FireServer()
-	    elseif name == "prestige" and not action then
+	    elseif name == "prestige" and not action[1] then
 	        ReplicatedStorage.RequestPrestigeEvent:FireServer()
-	    elseif name == "purchase" then
-	        if action.name and action.ButtonPart then
-	            ReplicatedStorage.RequestPurchaseEvent:FireServer(action)
-	        end
+	    elseif name == "purchase" and action[1] then
+	        ReplicatedStorage.RequestPurchaseEvent:FireServer(action[1])
 	    elseif name == "purchase_vehicle" then
-	        if action.name and type(action) == "table" then
-	            ReplicatedStorage.RequestVehiclePurchaseEvent:FireServer(action.name)
+	        ReplicatedStorage.RequestVehiclePurchaseEvent:FireServer(action[1])
+	    elseif name == "purchase_helicopter" then
+	        ReplicatedStorage.RequestHeliPurchaseEvent:FireServer(action[1])
+	    elseif name == "stance" then
+	        ReplicatedStorage.ACS_Engine.Events.Stance:FireServer(action[1], 0)
+	        MovementCache.Stance = action[1]
+	    elseif name == "sendchat" then
+	        if game:GetService("TextChatService").ChatVersion == Enum.ChatVersion.LegacyChatService then
+	            ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(tostring(action[1]), "All")
+	        else
+	            game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync(tostring(action[1]))
 	        end
 	    end
 	end
 
 	table.insert(ConnectionList, RunService.RenderStepped:Connect(function()
-	    local Teamcheck = Flags["combat_checks_team"].Value
+	    local Teamcheck = Flags["team_checks"].Value
 	
-	    if Flags["combat_hitboxextend_main_toggle"].Value then
+	    if Flags["hitboxes_main_toggle"].Value then
 	        for _, Player in next, Players:GetPlayers() do
 	            if Player.Name ~= Players.LocalPlayer.Name then
 	                if not Teamcheck or Player.Team ~= Players.LocalPlayer.Team then
 	                    pcall(function()
 	                        if Player.Character and Player.Character:FindFirstChild("Head") then
 	                            Player.Character.Head.Size = Vector3.new(
-	                                Flags["combat_hitboxextend_size"].Value,
-	                                Flags["combat_hitboxextend_size"].Value,
-	                                Flags["combat_hitboxextend_size"].Value
+	                                Flags["hitboxes_size"].Value,
+	                                Flags["hitboxes_size"].Value,
+	                                Flags["hitboxes_size"].Value
 	                            )
-	                            Player.Character.Head.Transparency = Flags["combat_hitboxextend_transparency"].Value
-	                            Player.Character.Head.Color = Flags["combat_hitboxextend_color"].Value
+	                            Player.Character.Head.Transparency = Flags["hitboxes_transparency"].Value
+	                            Player.Character.Head.Color = Flags["hitboxes_color"].Value
 	                            Player.Character.Head.Material = "Neon"
 	                            Player.Character.Head.CanCollide = false
 	                            Player.Character.Head.Massless = true
@@ -151,16 +116,16 @@ LPH_JIT_MAX(function() -- Main Cheat
 	        end
 	    end
 	
-	    if Flags["combat_knife_bot_main_toggle"].Value then
+	    if Flags["knife_bot_main_toggle"].Value then
 		    for _, Player in next, Players:GetPlayers() do
 		        if Player.Name ~= Players.LocalPlayer.Name then
 		            if not Teamcheck or Player.Team ~= Players.LocalPlayer.Team then
 		                if Player.Character and Player.Character:FindFirstChild("Head") then
-		                    if (Players.LocalPlayer.Character.Head.Position - Player.Character.Head.Position).Magnitude <= Flags["combat_knife_bot_radius"].Value then
+		                    if (Players.LocalPlayer.Character.Head.Position - Player.Character.Head.Position).Magnitude <= Flags["knife_bot_radius"].Value then
 		                        network:send("stab", {
 		                            Target = Player.Name,
-		                            StabSpeed = 10,
-		                            MaxDistance = Flags["combat_knife_bot_radius"].Value,
+		                            StabSpeed = 20000,
+		                            MaxDistance = Flags["knife_bot_radius"].Value,
 		                        })
 		                    end
 		                end
@@ -168,14 +133,14 @@ LPH_JIT_MAX(function() -- Main Cheat
 		        end
 		    end
 		
-		    if Flags["combat_knife_bot_kill_all"].Value then
+		    if Flags["knife_bot_kill_all"].Value then
 		        for _, Player in next, Players:GetPlayers() do
 		            if Player.Name ~= Players.LocalPlayer.Name then
 		                if not Teamcheck or Player.Team ~= Players.LocalPlayer.Team then
 		                    if Player.Character and Player.Character:FindFirstChild("Head") then
 		                        network:send("stab", {
 		                            Target = Player.Name,
-		                            StabSpeed = 10,
+		                            StabSpeed = 20000,
 		                            MaxDistance = math.huge,
 		                        })
 		                    end
@@ -192,13 +157,15 @@ LPH_JIT_MAX(function() -- Main Cheat
 	    end
 	    
 	    if Flags["tycoon_auto_buy"].Value then
-	        for _, child in pairs(Workspace[LocalPlayer.AssociatedTycoon.Value].BuyButtons:GetChildren()) do
+	        for _, child in pairs(workspace[LocalPlayer.AssociatedTycoon.Value].BuyButtons:GetChildren()) do
 	            if child:FindFirstChild("ButtonPart") then
 	                network:send("purchase", child.ButtonPart)
 	            end
 	        end
-	        local vehicleNames = {}
-	        network:send("purchase_vehicle", vehicleNames)
+	        local Vehicle = {}
+	        local Helicopter = {}
+	        network:send("purchase_vehicle", Vechicle)
+	        network:send("purchase_helicopter ", Helicopter)
 	    end
 	    
 	    if Flags["tycoon_auto_prestige"].Value then
@@ -206,64 +173,69 @@ LPH_JIT_MAX(function() -- Main Cheat
 	    end
 	end))
 
-	table.insert(ConnectionList, RunService.RenderStepped:Connect(function()
-	    if Flags["anti_aim_main_toggle"].Value then
-	        MovementCache.ReceivedPosition = LocalPlayer.Character.HumanoidRootPart.Position
-	        MovementCache.UpdateReceived = true
-	
-	        if Flags["anti_aim_pitch"].Value == "Down" then
-	            LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(math.rad(-30), 0, 0)
-	        elseif Flags["anti_aim_pitch"].Value == "Up" then
-	            LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(math.rad(30), 0, 0)
-	        elseif Flags["anti_aim_pitch"].Value == "Jitter" then
-	            LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(math.rad(math.random(-10, 10)), 0, 0)
-	        elseif Flags["anti_aim_pitch"].Value == "Zero" then
-	            LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(0, 0, 0)
-	        end
-	
-	        if Flags["anti_aim_degree"].Value == "180" then
-	            LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(180), 0)
-	        elseif Flags["anti_aim_degree"].Value == "Spin" then
-	            LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(math.random(0, 360)), 0)
-	        end
-	
-	        if Flags["anti_aim_yaw_pitch"].Value then
-	            LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(Flags["anti_aim_yaw_pitch"].Value), 0)
-	        end
-	
-	        if Flags["anti_aim_disabler"].Value == "InAir" and LocalPlayer.Character.Humanoid:GetState() ~= Enum.HumanoidStateType.Physics then
-	            LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(90), 0)
-	        elseif Flags["anti_aim_disabler"].Value == "Freefall" and LocalPlayer.Character.Humanoid:GetState() == Enum.HumanoidStateType.Freefall then
-	            LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(90), 0)
-	        end
-	    end
+	table.insert(ConnectionList, RunService.RenderStepped:Connect(function(DeltaTime)  
+	    if Flags["anti_aim_main_toggle"].Value and LocalPlayer.Character then  
+	        local Yaw = Flags["anti_aim_yaw"].Value and Flags["anti_aim_yaw_amount"].Value or 0  
+	        local Pitch = Flags["anti_aim_pitch"].Value and Flags["anti_aim_pitch_amount"].Value or 0  
+	        local SpinSpeed = Flags["anti_aim_spin_bot"].Value and Flags["anti_aim_spin_bot_speed"].Value or 0  
+	        local Jitter = Flags["anti_aim_jitter"].Value and Flags["anti_aim_jitter_speed"].Value or 0  
+	  
+	        local SpinDirection = Flags["anti_aim_spin_bot_direction"].Value == "Left" and -1 or 1  
+	  
+	        local YawRotation = CFrame.Angles(0, math.rad(Yaw * SpinDirection), 0)  
+	        local PitchRotation = CFrame.Angles(math.rad(Pitch), 0, 0)  
+	        local SpinRotation = CFrame.Angles(0, math.rad(SpinSpeed * SpinDirection * DeltaTime * 60), 0)  
+	        local JitterRotation = Flags["anti_aim_jitter"].Value and CFrame.Angles(0, math.rad(math.random(-Jitter, Jitter)), 0) or CFrame.new()  
+	  
+	        if Flags["anti_aim_force_stance"].Value then  
+	            if Flags["anti_aim_set_stance"].Value == "Stand" then  
+	                network:send("stance", 0)  
+	            elseif Flags["anti_aim_set_stance"].Value == "Crouch" then  
+	                network:send("stance", 1)  
+	            elseif Flags["anti_aim_set_stance"].Value == "Prone" then  
+	                network:send("stance", 2)  
+	            end  
+	            MovementCache.Stance = Flags["anti_aim_set_stance"].Value  
+	        end  
+	  
+	        LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * YawRotation * PitchRotation * SpinRotation * JitterRotation  
+	    end  
+	  
+	    if Flags["third_person_main_toggle"].Value then  
+	        if LocalPlayer.Character:FindFirstChildWhichIsA("Tool") then
+	            LocalPlayer.CameraMaxZoomDistance = Flags["third_person_zoom_distance"].Value
+			    LocalPlayer.CameraMinZoomDistance = Flags["third_person_zoom_distance"].Value
+			    LocalPlayer.CameraMode = Enum.CameraMode.Classic
+	        else
+				LocalPlayer.CameraMaxZoomDistance = 20
+			    LocalPlayer.CameraMinZoomDistance = 0.5
+			    LocalPlayer.CameraMode = Enum.CameraMode.Classic
+			end
+	    end  
 	end))
 	
+	local ChatSpamLists = {"i bet stealth developer are peterfiles", "stop playing the game", "couldnt be me", "servenity on top", "best anticheat - stealth devs"}
+	local stillGoing = true
+    local PlayerWeapon = nil
 	task.spawn(function()
-	    local stillGoing = true
-	    local PlayerWeapon = nil
-	
-	    local function RefreshPlayerWeapon()
-	        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("ACS_Client") then
-	            PlayerWeapon = LocalPlayer.Character.ACS_Client.ACS_Framework
-	        else
-	            PlayerWeapon = nil
-	        end
-	    end
-	
 	    while stillGoing do
 	        task.wait(.35) -- you would not believe the lag
 	
+			local function RefreshPlayerWeapon()
+		        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("ACS_Client") then
+		            PlayerWeapon = LocalPlayer.Character.ACS_Client.ACS_Framework
+		        else
+		            PlayerWeapon = nil
+		        end
+		    end
+	
+			if Flags["chat_spam_main_toggle"].Value then
+		        task.wait(Flags["chat_spam_delay"].Value)
+		        network:send("sendchat", ChatSpamLists[math.random(1, #ChatSpamLists)])
+			end
+	
 	        RefreshPlayerWeapon()
-	
 	        if PlayerWeapon then
-	            if Flags["combat_exploitss_airkill"].Value then
-	                ReplicatedStorage.ACS_Engine.Events.EditKillConditions:FireServer("InAir", true)
-	            end
-	            if Flags["combat_exploitss_no_scope"].Value then
-	                ReplicatedStorage.ACS_Engine.Events.EditKillConditions:FireServer("Aiming", false)
-	            end
-	
 	            local ReloadFunction = Hydroxide.searchClosure(PlayerWeapon, "Reload", 1, {
 	                [1] = "Type", [2] = "Gun", [3] = "Stinger", [4] = "Launcher", [5] = "Grapple Hook", [6] = "Ammo"
 	            })
@@ -276,11 +248,14 @@ LPH_JIT_MAX(function() -- Main Cheat
 	            local RecoilFunction = Hydroxide.searchClosure(PlayerWeapon, "setup", 13, {
 	                [1] = "Humanoid", [2] = "WaitForChild", [3] = "Health", [4] = "MouseIconEnabled", [5] = "Enum", [6] = "CameraMode"
 	            })
+           	local MovementData = debug.getupvalue(Hydroxide.searchClosure(PlayerWeapon, "GunFx", 4, {
+			        [1] = "IsTurret", [2] = "SeatPart", [3] = "Parent", [4] = "gun", [5] = "base", [6] = "Handle"
+			    }), 4)
 	
 	            if RecoilFunction then
 	                local RecoilData = debug.getupvalue(RecoilFunction, 13)
 	                if RecoilData then
-	                    if Flags["combat_exploits_no_bullet_recoil"].Value then
+	                    if Flags["gun_mods_no_bullet_recoil"].Value then
 	                        RecoilData["HorizontalRecoil"] = 0
 	                        RecoilData["VerticalRecoil"] = 0
 	                    else
@@ -293,26 +268,33 @@ LPH_JIT_MAX(function() -- Main Cheat
 	            if ReloadFunction then
 	                local AmmoData = debug.getupvalue(ReloadFunction, 1)
 	                if AmmoData then
-	                    AmmoData["Ammo"] = Flags["combat_exploits_inf_ammo"].Value and 99998 or 20
+	                    AmmoData["Ammo"] = Flags["gun_mods_inf_ammo"].Value and 99998 or 20
 	                end
 	            end
 	
 	            if AdsFunction then
 	                local AdsData = debug.getupvalue(AdsFunction, 3)
 	                if AdsData then
-	                    AdsData["Bullets"] = Flags["combat_exploits_bullet_multiplier"].Value and 10 or 1
-	                    AdsData["BulletDrop"] = Flags["combat_exploits_no_bullet_drop"].Value and 0 or 0.25
-	                    AdsData["BulletPenetration"] = Flags["combat_exploits_magic_bullet"].Value and math.huge or 75
+	                    AdsData["BulletDrop"] = Flags["gun_mods_no_bullet_drop"].Value and 0 or 0.25
 	                end
 	            end
 	
 	            if BulletSpreadFunction then
 	                local BulletSpreadData = debug.getupvalue(BulletSpreadFunction, 2)
 	                if BulletSpreadData and BulletSpreadData["MaxSpread"] then
-	                    BulletSpreadData["MaxSpread"] = Flags["combat_exploits_no_bullet_spread"].Value and 0 or 0.75
-	                    BulletSpreadData["MinSpread"] = Flags["combat_exploits_no_bullet_spread"].Value and 0 or 0.75
+	                    BulletSpreadData["MaxSpread"] = Flags["gun_mods_no_bullet_spread"].Value and 0 or 0.75
+	                    BulletSpreadData["MinSpread"] = Flags["gun_mods_no_bullet_spread"].Value and 0 or 0.75
 	                end
 	            end
+	
+            	if Flags["movement_walk_speed"].Value then
+				    if MovementData then
+				        local WalkspeedTypes = {"SlowPace", "Crouch", "Normal", "Aim", "Run"}
+				        for _, speedType in pairs(WalkspeedTypes) do
+				            MovementData[speedType .. "WalkSpeed"] = Flags["movement_walk_speed_amount"].Value
+				        end
+				    end
+				end
 	        end
 	    end
 	end)
@@ -326,5 +308,83 @@ LPH_JIT_MAX(function() -- Main Cheat
 	    stillGoing = false
 	    PlayerWeapon = nil
 	end)
+	
+	UnloadCheat = function()
+		OrionLib:Destroy()
+		HitboxObjects:Destroy()
+		BacktrackObjects:Destroy()
+	end
 	-- wasn't that so bad right?
+end)()
+
+LPH_NO_VIRTUALIZE(function() -- UI Creation
+    local HttpService = game:GetService("HttpService")
+    
+    local window = OrionLib:MakeWindow({Name = "Servenity", IntroEnabled = false, SaveConfig = true, ConfigFolder = "Servenity"})
+    OrionLib.SelectedTheme = "Default"
+
+	local legit = window:MakeTab({Name = "Legit", Icon = "rbxassetid://4483345998"})
+	local rage = window:MakeTab({Name = "Rage", Icon = "rbxassetid://8547236654"})
+	local visuals = window:MakeTab({Name = "Visual", Icon = "rbxassetid://107233469599"})
+	local misc = window:MakeTab({Name = "Misc", Icon = "rbxassetid://10747373176"})
+	local settings = window:MakeTab({Name = "Settings", Icon = "rbxassetid://10734950309"})
+	
+	legit:AddSection({Name = "Checks"})
+	legit:AddToggle({Name = "Team", Flag = "team_checks", Save = true})
+	
+	legit:AddSection({Name = "Hitboxes"})
+	legit:AddToggle({Name = "Enabled", Flag = "hitboxes_main_toggle", Save = true})
+	legit:AddSlider({Name = "Size", Flag = "hitboxes_size",  Max = 200, Default = 14, ValueName = "px", Save = true})
+	legit:AddSlider({Name = "Transparency", Flag = "hitboxes_transparency", Max = 1, Increment = 0.01, Default = 0.4, ValueName = "%", Save = true})
+	legit:AddColorpicker({Name = "Color", Default = MainColor, Flag = "hitboxes_color", Save = true})
+	
+	legit:AddSection({Name = "Gun Mods"})
+	legit:AddToggle({Name = "Infinite Ammo", Flag = "gun_mods_inf_ammo", Save = true})
+	legit:AddToggle({Name = "Force Automatic", Flag = "gun_mods_force_automatic", Save = true})
+	legit:AddToggle({Name = "No Drops", Flag = "gun_mods_no_bullet_drop", Save = true})
+	legit:AddToggle({Name = "No Spread", Flag = "gun_mods_no_bullet_spread", Save = true})
+	legit:AddToggle({Name = "No Recoil", Flag = "gun_mods_no_bullet_recoil", Save = true})
+    
+    rage:AddSection({Name = "Knife Bot"})
+	rage:AddToggle({Name = "Enabled", Flag = "knife_bot_main_toggle", Save = true})
+	rage:AddToggle({Name = "Kill All", Flag = "knife_bot_kill_all", Save = true})
+	rage:AddSlider({Name = "Radius", Flag = "knife_bot_radius", Max = 20000, Default = 200, ValueName = "px", Save = true})
+    
+    rage:AddSection({Name = "Anti Aim"})
+    rage:AddToggle({Name = "Enabled", Flag = "anti_aim_main_toggle", Save = true})
+    rage:AddToggle({Name = "Yaw", Flag = "anti_aim_yaw", Save = true})
+    rage:AddSlider({Name = "Yaw Amount", Flag = "anti_aim_yaw_amount", Max = 360, Min = 1, Default = 180, ValueName = "Degrees", Save = true})
+    rage:AddToggle({Name = "Pitch", Flag = "anti_aim_pitch", Save = true})
+    rage:AddSlider({Name = "Pitch Amount", Flag = "anti_aim_pitch_amount", Max = 180, Min = 1, Default = 0, ValueName = "Degrees", Save = true})
+    rage:AddToggle({Name = "Spin Bot", Flag = "anti_aim_spin_bot", Save = true})
+    rage:AddSlider({Name = "Spin Bot Speed", Flag = "anti_aim_spin_bot_speed", Max = 160, Min = 1, Default = 15, ValueName = "Degrees & Seconds", Save = true})
+    rage:AddDropdown({Name = "Spin Bot Direction", Flag = "anti_aim_spin_bot_direction", Default = "Left", Options = {"Left", "Right"} })
+    rage:AddToggle({Name = "Jitter", Flag = "anti_aim_jitter", Save = true})
+    rage:AddSlider({Name = "Jitter Speed", Flag = "anti_aim_jitter_speed", Max = 160, Min = 1, Default = 15, ValueName = "Degrees & Seconds", Save = true})
+    rage:AddToggle({Name = "Force Stance", Flag = "anti_aim_force_stance", Save = true})
+    rage:AddDropdown({Name = "Set Stance", Flag = "anti_aim_set_stance", Default = "Stand", Options = {"Stand", "Crouch", "Prone"} })
+    
+    misc:AddSection({Name = "Movement"})
+	misc:AddToggle({Name = "Walk Speed", Flag = "movement_walk_speed", Save = true})
+	misc:AddSlider({Name = "Set Speed", Flag = "movement_walk_speed_amount", Max = 235, Min = 1, Default = 50, ValueName = "Studs & Seconds", Save = true})
+	
+	misc:AddSection({Name = "Tycoon"})
+	misc:AddToggle({Name = "Auto Collect Cash", Flag = "tycoon_auto_collect_cash", Save = true})
+	misc:AddToggle({Name = "Auto Buy", Flag = "tycoon_auto_buy", Save = true})
+	misc:AddToggle({Name = "Auto Prestige", Flag = "tycoon_auto_prestige", Save = true})
+	
+	misc:AddSection({Name = "Sounds"})
+    misc:AddDropdown({Name = "Hit Sound", Flag = "sounds_hit", Default = "none", Options = {"none", "amongus", "fatality", "bubble", "cod", "anime", "anime2", "anime3", "anime4"} })
+    misc:AddDropdown({Name = "Kill Sound", Flag = "sounds_kill", Default = "none", Options = {"none", "amongus", "fatality", "bubble", "cod", "anime", "anime2", "anime3", "anime4"} })
+    
+    misc:AddSection({Name = "Chat Spam"})
+    misc:AddToggle({Name = "Enabled", Flag = "chat_spam_main_toggle", Save = true})
+    misc:AddToggle({Name = "Team Only", Flag = "chat_spam_team_only", Save = true})
+    misc:AddSlider({Name = "Chat Spam Delay", Flag = "chat_spam_delay", Max = 2, Min = 0.1, Default = 0.8, Increment = 0.01, ValueName = "Seconds", Save = true})
+    
+    visuals:AddSection({Name = "Third Person"})
+    visuals:AddToggle({Name = "Enabled", Flag = "third_person_main_toggle", Save = true})
+    visuals:AddSlider({Name = "Zoom Distance", Flag = "third_person_zoom_distance", Max = 20, Min = 0, Default = 0, ValueName = "Studs", Save = true})
+    
+    OrionLib:WindowMobileToggle({})
 end)()
